@@ -1,0 +1,39 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BAtwitter_DAW_2526.Models
+{
+    public class Echo
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int? FlockId { get; set; }
+        public int UserId { get; set; }
+
+        public int? CommParentId {  get; set; }
+        public int? AmpParentId { get; set; } // amplifier
+
+        [MaxLength(400, ErrorMessage = "The content of the post can't exceed 400 characters \uD83D")]
+        public string? Content { get; set; }
+        public string? Att1 { get; set; }
+        public string? Att2 { get; set; }
+
+        public int LikesCount { get; set; }
+        public int CommentsCount { get; set; }
+        public int ReboundCount { get; set; }
+        public int AmplifierCount { get; set; }
+        public int BookmarksCount { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.Now;
+        public bool IsRemoved { get; set; } = false;
+
+        public virtual Flock? Flock { get; set; }
+        public virtual ApplicationUser User { get; set; } = new ApplicationUser();
+        public virtual Echo? CommParent { get; set; }
+        public virtual Echo? AmpParent { get; set; }
+
+        public virtual ICollection<Echo>? comments { get; set; } 
+        public virtual ICollection<Echo>? amplifiers { get; set; }
+        public virtual ICollection<Bookmark>? bookmarks {  get; set; }
+
+    }
+}
