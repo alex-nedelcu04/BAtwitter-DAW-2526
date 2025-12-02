@@ -6,7 +6,7 @@
         public int UserId { get; set; }
 
         public virtual Flock? Flock { get; set; }
-        public virtual ApplicationUser? User { get; set; }
+        public virtual UserProfile? User { get; set; }
 
         public DateTime JoinDate { get; set; } = DateTime.Now;
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BAtwitter_DAW_2526.Models
 {
@@ -27,13 +28,18 @@ namespace BAtwitter_DAW_2526.Models
         public bool IsRemoved { get; set; } = false;
 
         public virtual Flock? Flock { get; set; }
-        public virtual ApplicationUser User { get; set; } = new ApplicationUser();
+        public virtual UserProfile User { get; set; } = new UserProfile();
+
+        [ForeignKey(nameof(CommParentId))]
+        [InverseProperty(nameof(Comments))]
         public virtual Echo? CommParent { get; set; }
+        [ForeignKey(nameof(AmpParentId))]
+        [InverseProperty(nameof(Amplifiers))]
         public virtual Echo? AmpParent { get; set; }
 
-        public virtual ICollection<Echo>? comments { get; set; } 
-        public virtual ICollection<Echo>? amplifiers { get; set; }
-        public virtual ICollection<Bookmark>? bookmarks {  get; set; }
+        public virtual ICollection<Echo>? Comments { get; set; }
+        public virtual ICollection<Echo>? Amplifiers { get; set; }
+        public virtual ICollection<Bookmark>? Bookmarks {  get; set; }
 
     }
 }

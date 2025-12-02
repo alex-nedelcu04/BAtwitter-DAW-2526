@@ -12,7 +12,7 @@
         public DateTime? BookmarkedDate { get; set; }
 
         public virtual Echo Echo { get; set; } = new Echo();
-        public virtual ApplicationUser User { get; set; } = new ApplicationUser();
+        public virtual UserProfile User { get; set; } = new UserProfile();
 
     }
 }
