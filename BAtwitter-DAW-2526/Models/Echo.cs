@@ -30,16 +30,16 @@ namespace BAtwitter_DAW_2526.Models
         public virtual Flock? Flock { get; set; }
         public virtual UserProfile User { get; set; } = new UserProfile();
 
-        [ForeignKey(nameof(CommParentId))]
-        [InverseProperty(nameof(Comments))]
+        //[ForeignKey(nameof(CommParentId))]
+        //[InverseProperty(nameof(Comments))]
         public virtual Echo? CommParent { get; set; }
-        [ForeignKey(nameof(AmpParentId))]
-        [InverseProperty(nameof(Amplifiers))]
+
         public virtual Echo? AmpParent { get; set; }
 
         public virtual ICollection<Echo>? Comments { get; set; }
         public virtual ICollection<Echo>? Amplifiers { get; set; }
         public virtual ICollection<Bookmark>? Bookmarks {  get; set; }
+        public virtual ICollection<Interaction>? Interactions { get; set; }
 
     }
 }

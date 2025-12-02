@@ -20,12 +20,51 @@ namespace BAtwitter_DAW_2526.Data
         public DbSet<Relation> Relations { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         
-        /*
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
  
+            modelBuilder.Entity<Bookmark>(entity =>
+            {
+                entity.HasKey(b => new { b.UserId, b.EchoId });
+
+                entity.HasOne(b => b.User)
+                      .WithMany(u => u.Bookmarks)
+                      .HasForeignKey(b => b.UserId);
+
+                entity.HasOne(b => b.Echo)
+                      .WithMany(e => e.Bookmarks)
+                      .HasForeignKey(b => b.EchoId);
+            });
+
+            modelBuilder.Entity<FlockUser>(entity =>
+            {
+                entity.HasKey(fu => new { fu.FlockId, fu.UserId });
+
+                entity.HasOne(fu => fu.Flock)  
+                      .WithMany(f => f.FlockUsers)
+                      .HasForeignKey(fu => fu.FlockId);
+
+                entity.HasOne(fu => fu.User)
+                      .WithMany(u => u.FlockUsers)
+                      .HasForeignKey(fu => fu.UserId);
+            });
+
+            modelBuilder.Entity<Interaction>(entity =>
+            {
+                entity.HasKey(i => new { i.UserId, i.EchoId });
+
+                entity.HasOne(i => i.User)
+                      .WithMany(u => u.Interactions)
+                      .HasForeignKey(i => i.UserId);
+
+                entity.HasOne(i => i.Echo)
+                      .WithMany(e => e.Interactions)
+                      .HasForeignKey(i => i.EchoId);
+            });
+
             modelBuilder.Entity<Relation>(entity =>
             {
                 entity.HasKey(r => new { r.SenderId, r.ReceiverId });
@@ -45,14 +84,12 @@ namespace BAtwitter_DAW_2526.Data
             {
                 entity.HasOne(e => e.CommParent)
                       .WithMany(e => e.Comments)
-                      .HasForeignKey(e => e.CommParentId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                      .HasForeignKey(e => e.CommParentId);
 
                 entity.HasOne(e => e.AmpParent)
                       .WithMany(e => e.Amplifiers)
-                      .HasForeignKey(e => e.AmpParentId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                      .HasForeignKey(e => e.AmpParentId);
             });
-        }*/
+        }
     }
 }

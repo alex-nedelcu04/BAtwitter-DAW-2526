@@ -24,6 +24,7 @@ namespace BAtwitter_DAW_2526.Models
         public virtual ApplicationUser ApplicationUser { get; set; } = new ApplicationUser();
         public virtual ICollection<FlockUser>? FlockUsers { get; set; }
         public virtual ICollection<Bookmark>? Bookmarks { get; set; }
+        public virtual ICollection<Interaction>? Interactions { get; set; }
 
         [InverseProperty(nameof(Relation.Sender))]
         public virtual ICollection<Relation> SentRelations { get; set; } = new List<Relation>();

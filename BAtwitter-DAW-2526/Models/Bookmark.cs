@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BAtwitter_DAW_2526.Models
 {
-    [PrimaryKey(nameof(UserId), nameof(EchoId))]
+
     public class Bookmark
     {
         public int UserId { get; set; }

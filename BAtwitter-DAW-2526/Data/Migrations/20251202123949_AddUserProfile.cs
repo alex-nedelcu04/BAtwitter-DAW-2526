@@ -5,7 +5,7 @@
 namespace BAtwitter_DAW_2526.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class createInit : Migration
+    public partial class AddUserProfile : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
