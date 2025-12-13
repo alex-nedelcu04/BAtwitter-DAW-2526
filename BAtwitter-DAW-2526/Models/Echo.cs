@@ -11,7 +11,7 @@ namespace BAtwitter_DAW_2526.Models
         public int? FlockId { get; set; }
         public int UserId { get; set; }
 
-        public int? CommParentId {  get; set; }
+        public int? CommParentId { get; set; } // comment
         public int? AmpParentId { get; set; } // amplifier
 
         [MaxLength(400, ErrorMessage = "The content of the post can't exceed 400 characters \uD83D")]
@@ -25,6 +25,7 @@ namespace BAtwitter_DAW_2526.Models
         public int AmplifierCount { get; set; }
         public int BookmarksCount { get; set; }
         public DateTime DateCreated { get; set; } = DateTime.Now;
+        public DateTime? DateEdited { get; set; } = null;
         public bool IsRemoved { get; set; } = false;
 
         public virtual Flock? Flock { get; set; }

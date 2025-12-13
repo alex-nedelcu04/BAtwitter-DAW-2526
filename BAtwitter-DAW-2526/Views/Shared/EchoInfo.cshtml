@@ -1,0 +1,56 @@
+﻿@model BAtwitter_DAW_2526.Models.Echo
+
+<div class="card-body">
+    
+    <div class="card-text">@Model.Content</div>
+
+    <div class="card-img">
+        @if (Model.Att1 is not null)
+        {
+            @if (Model.Att1.Contains(".mp4") || Model.Att1.Contains(".mov"))
+            {
+                <video width="550" height="300" controls>
+                    <source src="@Model.Att1" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            }
+            else
+            {
+                <img src="@Model.Att1" alt="Article Image" style="width: 100%; height: 450px; object-fit: cover" />
+
+            }
+        }
+
+        @if (Model.Att2 is not null)
+        {
+            @if (Model.Att2.Contains(".mp4") || Model.Att2.Contains(".mov"))
+            {
+                <video width="550" height="300" controls>
+                    <source src="@Model.Att2" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            }
+            else
+            {
+                <img src="@Model.Att2" alt="Article Image" style="width: 100%; height: 450px; object-fit: cover" />
+            }
+        }
+    </div>
+
+
+    <div class="d-flex justify-content-between flex-row mt-5">
+
+        <div><i class="bi bi-heart"></i>@Model.LikesCount</div>
+        <div><i class="bi bi-heart"></i> @Model.LikesCount</div>
+        <div><i class="bi bi-heart"></i> @Model.LikesCount</div>
+
+        <img src="@Model.User.PfpLink" alt="User pfp" style="width: 100%; height: 80px; object-fit: cover" />
+        <div> @(Model.User.DisplayName + " (@" + @Model.User.ApplicationUser.UserName) </div>
+
+        <span class="alert-success px-1 align-content-right">
+            @(Model.DateCreated.ToString("H:m") + "   -   " + Model.DateCreated.ToString("MMM d, yyyy"))
+        </span>
+
+    </div>
+
+</div>

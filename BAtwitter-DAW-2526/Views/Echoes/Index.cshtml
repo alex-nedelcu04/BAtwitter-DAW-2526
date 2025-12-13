@@ -1,0 +1,28 @@
+﻿
+
+<h2 class="text-center">Main Page</h2>
+
+<br />
+
+@if(ViewBag.Message != null){
+
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<br />
+
+
+@foreach (var echo in ViewBag.Echoes)
+{
+    <div class="card">
+
+        <partial name="EchoInfo" model="echo"/>
+
+        <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@echo.Id">View Echo</a>
+
+    </div>
+
+    <br />
+    <br />
+}
+

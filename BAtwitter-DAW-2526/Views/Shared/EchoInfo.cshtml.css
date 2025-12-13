@@ -1,0 +1,7 @@
+﻿.container {
+    display: flex;
+}
+
+.container img, .container video {
+    width: 33.33%;
+}
