@@ -1,7 +1,12 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 
 
-@* Afisarea unui articol impreuna cu categoria din care face *@
+@* Echo + commens*@
+
+@if(ViewBag.Message != null)
+{
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
 
 <div class="card">
 
@@ -27,63 +32,84 @@
 <br />
 <br />
 
-@* Afisare comentarii impreuna cu butoanele de editare si stergere *@
+@* Afisare comentarii recursive - afisate exact ca postarile *@
 
-@if (Model.Comments != null)
+@if (Model.Comments != null && Model.Comments.Any())
 {
-    foreach (var comm in Model.Comments)
+    <h5 class="mt-4 mb-3">Comments:</h5>
+    @foreach (var comm in Model.Comments.OrderBy(c => c.DateCreated))
     {
-        <div class="container">
+        <div class="container" style="margin-left: 0;">
             <div class="row">
                 <div class="col-md-2"></div>
-
                 <div class="col-md-8">
-
-                    <div>
-
-                        <p>@comm.Content</p>
-                        <small>@comm.DateCreated</small>
-
-                        <strong><i class="bi bi-person"></i> @comm.User.ApplicationUser.UserName</strong>
-
-                    </div>
-                    <br>
-
-                    @if (comm.UserId == ViewBag.CurrentUser)
-                    {
-
-                        <div class="d-flex">
-
-                            <div>
-
-                                <a class="btn btn-outline-primary" asp-controller="Echoes" asp-action="Edit" asp-route-id="@comm.Id">
-                                    <i class="bi bi-pencil-square"></i> Edit
-                                </a>
-
-                            </div>
-
-                            <div>
-
-                                <form method="post" asp-controller="Comments" asp-action="Delete" asp-route-id="@comm.Id">
-
-                                    <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i>Sterge</button>
-
+                    <div class="card">
+                        <partial name="EchoInfo" model="comm" />
+                        
+                        <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@comm.Id">View Echo</a>
+                        
+                        @if (comm.UserId == ViewBag.CurrentUser)
+                        {
+                            <div class="d-flex flex-row justify-content-between mt-2">
+                                <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@comm.Id">Modify Echo</a>
+                                <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@comm.Id">
+                                    <button class="btn btn-danger" type="submit">Delete Echo</button>
                                 </form>
-
                             </div>
-
+                        }
+                    </div>
+                    
+                    @* Formular pentru răspuns la comentariu *@
+                    <div class="card mt-2">
+                        <form method="post" asp-controller="Echoes" asp-action="Show" class="p-3">
+                            <input type="hidden" name="EchoId" value="@comm.Id" />
+                            <div class="input-group">
+                                <textarea class="form-control" name="Content" placeholder="Reply to this comment..." rows="2"></textarea>
+                                <button class="btn btn-success" type="submit">Reply</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    @* Afișare recursivă a comentariilor la comentariu *@
+                    @if (comm.Comments != null && comm.Comments.Any())
+                    {
+                        <div style="margin-left: 30px; border-left: 2px solid #ddd; padding-left: 15px; margin-top: 10px;">
+                            @foreach (var subComm in comm.Comments.OrderBy(c => c.DateCreated))
+                            {
+                                <div class="card mt-2">
+                                    <partial name="EchoInfo" model="subComm" />
+                                    
+                                    <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@subComm.Id">View Echo</a>
+                                    
+                                    @if (subComm.UserId == ViewBag.CurrentUser)
+                                    {
+                                        <div class="d-flex flex-row justify-content-between mt-2">
+                                            <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@subComm.Id">Modify Echo</a>
+                                            <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@subComm.Id">
+                                                <button class="btn btn-danger" type="submit">Delete Echo</button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                                
+                                @* Formular pentru răspuns la sub-comentariu *@
+                                <div class="card mt-2">
+                                    <form method="post" asp-controller="Echoes" asp-action="Show" class="p-3">
+                                        <input type="hidden" name="EchoId" value="@subComm.Id" />
+                                        <div class="input-group">
+                                            <textarea class="form-control" name="Content" placeholder="Reply..." rows="2"></textarea>
+                                            <button class="btn btn-success" type="submit">Reply</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            }
                         </div>
-
                     }
-
+                    
                     <br />
-
                 </div>
-
                 <div class="col-md-2"></div>
-
             </div>
-
         </div>
     }
 }
@@ -105,16 +131,16 @@
 
                     <div class="card-body">
 
-                        <input type="hidden" name="ArticleId" value="@Model.Id" />
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
 
-                        <label>Continut comentariu</label>
+                        <label>Comment content</label>
                         <br />
 
                         <textarea class="form-control" name="Content"></textarea>
                         <span asp-validation-for="Content" class="text-danger"></span>
                         <br /><br/>
 
-                        <button class="btn btn-success" type="submit">Adauga comentariul</button>
+                        <button class="btn btn-success" type="submit">Add Comment</button>
 
                     </div>
 
