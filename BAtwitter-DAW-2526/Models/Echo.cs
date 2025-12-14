@@ -9,10 +9,10 @@ namespace BAtwitter_DAW_2526.Models
         public int Id { get; set; }
 
         public int? FlockId { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         public int? CommParentId { get; set; } // comment
-        public int? AmpParentId { get; set; } // amplifier
+        public int? AmpParentId { get; set; }  // amplifier
 
         [MaxLength(400, ErrorMessage = "The content of the post can't exceed 400 characters \uD83D")]
         public string? Content { get; set; }

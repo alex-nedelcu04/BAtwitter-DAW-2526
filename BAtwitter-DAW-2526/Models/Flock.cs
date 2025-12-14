@@ -7,7 +7,7 @@ namespace BAtwitter_DAW_2526.Models
     {
         [Key]
         public int Id { get; set; }
-        public int AdminId { get; set; }
+        public string AdminId { get; set; } = string.Empty;
 
         public virtual UserProfile Admin { get; set; } = new UserProfile();
 

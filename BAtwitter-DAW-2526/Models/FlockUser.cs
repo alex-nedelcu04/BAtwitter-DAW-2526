@@ -3,7 +3,7 @@
     public class FlockUser
     {
         public int FlockId { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         public virtual Flock? Flock { get; set; }
         public virtual UserProfile? User { get; set; }

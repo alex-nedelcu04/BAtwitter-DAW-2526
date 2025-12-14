@@ -2,7 +2,7 @@
 {
     public class Interaction
     {
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public int EchoId { get; set; }
 
         public bool Liked { get; set; } = false;

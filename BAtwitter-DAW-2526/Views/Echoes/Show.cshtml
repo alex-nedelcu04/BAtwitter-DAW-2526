@@ -105,16 +105,16 @@
 
                     <div class="card-body">
 
-                        <input type="hidden" name="ArticleId" value="@Model.Id" />
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
 
-                        <label>Continut comentariu</label>
+                        <label>Comment Content</label>
                         <br />
 
                         <textarea class="form-control" name="Content"></textarea>
                         <span asp-validation-for="Content" class="text-danger"></span>
                         <br /><br/>
 
-                        <button class="btn btn-success" type="submit">Adauga comentariul</button>
+                        <button class="btn btn-success" type="submit">Add Comment</button>
 
                     </div>
 

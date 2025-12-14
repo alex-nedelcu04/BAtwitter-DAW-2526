@@ -6,7 +6,7 @@ namespace BAtwitter_DAW_2526.Models
 
     public class Bookmark
     {
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public int EchoId { get; set; }
 
         public DateTime AddDate { get; set; } = DateTime.Now;

@@ -8,8 +8,8 @@ namespace BAtwitter_DAW_2526.Models
     public class Relation
     {
   
-        public int SenderId { get; set; }
-        public int ReceiverId { get; set; }
+        public string SenderId { get; set; } = string.Empty;
+        public string ReceiverId { get; set; } = string.Empty;
 
         public virtual UserProfile? Sender { get; set; }
 

@@ -7,7 +7,7 @@ namespace BAtwitter_DAW_2526.Models
     {
 
         [Key]
-        public int Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string ApplicationUserId { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "The user must have a diplay name \uD83D")]

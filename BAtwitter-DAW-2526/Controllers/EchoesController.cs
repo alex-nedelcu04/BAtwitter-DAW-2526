@@ -57,9 +57,8 @@ namespace BAtwitter_DAW_2526.Controllers
             Echo? echo = db.Echoes
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
-                            .Include(ech => ech.Comments)
+                            .Include(ech => ech.Comments!)
                                 .ThenInclude(comm => comm.User)
-                                .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
                             .Where(ech => ech.Id == id)
                             .FirstOrDefault();
@@ -74,7 +73,7 @@ namespace BAtwitter_DAW_2526.Controllers
             // get post parents
             ViewBag.Parents = new List<Echo>();
             Echo? curr = echo;
-            while (curr.CommParentId != null)
+            while (curr != null && curr.CommParentId != null)
             {
                 Echo? parent = db.Echoes
                             .Include(ech => ech.Interactions)
@@ -118,9 +117,12 @@ namespace BAtwitter_DAW_2526.Controllers
         {
             echo.DateCreated = DateTime.Now;
 
-            // get user for FK
-            echo.UserId = (_userManager.GetUserId(User) == null) ? -1 : int.Parse(_userManager.GetUserId(User));
+          
 
+            ModelState.Remove(nameof(echo.User.ApplicationUser));
+            ModelState.Remove(nameof(echo.User.DisplayName));
+            ModelState.Remove(nameof(echo.User.PfpLink));
+            
             if (att1 != null && att1.Length > 0)
             {
                 var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov" };
@@ -131,8 +133,8 @@ namespace BAtwitter_DAW_2526.Controllers
                     return View(echo);
                 }
 
-                var storagePath = Path.Combine(_env.WebRootPath, "Resources/Images", Convert.ToString(echo.Id), att1.FileName);
-                var databaseFileName = "/Resources/Images/" + echo.Id + "/" + att1.FileName;
+                var storagePath = Path.Combine(_env.WebRootPath, "Resources/Images", att1.FileName);
+                var databaseFileName = "/Resources/Images/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -153,8 +155,8 @@ namespace BAtwitter_DAW_2526.Controllers
                     return View(echo);
                 }
 
-                var storagePath = Path.Combine(_env.WebRootPath, "Resources/Images", Convert.ToString(echo.Id), att2.FileName);
-                var databaseFileName = "/Resources/Images/" + echo.Id + "/" + att2.FileName;
+                var storagePath = Path.Combine(_env.WebRootPath, "Resources/Images", att2.FileName);
+                var databaseFileName = "/Resources/Images/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -209,7 +211,7 @@ namespace BAtwitter_DAW_2526.Controllers
         
         public IActionResult Edit(int id)
         {
-            Echo? echo = db.Echoes.Where(art => art.Id == id).FirstOrDefault();
+            Echo? echo = db.Echoes.Where(ech => ech.Id == id).FirstOrDefault();
 
             if (echo is null)
             {
