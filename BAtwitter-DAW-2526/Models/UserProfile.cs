@@ -5,10 +5,8 @@ namespace BAtwitter_DAW_2526.Models
 {
     public class UserProfile
     {
-
         [Key]
-        public int Id { get; set; }
-        public string ApplicationUserId { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty; // ApplicationUserId
 
         [Required(ErrorMessage = "The user must have a diplay name \uD83D")]
         public string DisplayName { get; set; } = string.Empty;
@@ -21,7 +19,7 @@ namespace BAtwitter_DAW_2526.Models
         public string? Pronouns { get; set; }
         public string AccountStatus { get; set; } = "active";
 
-        public virtual ApplicationUser ApplicationUser { get; set; } = new ApplicationUser();
+        public virtual ApplicationUser? ApplicationUser { get; set; }
         public virtual ICollection<FlockUser>? FlockUsers { get; set; }
         public virtual ICollection<Bookmark>? Bookmarks { get; set; }
         public virtual ICollection<Interaction>? Interactions { get; set; }

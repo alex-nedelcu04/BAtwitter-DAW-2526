@@ -5,7 +5,7 @@
     <div class="card-text">@Model.Content</div>
 
     <div class="card-img">
-        @if (Model.Att1 is not null)
+        @if (!string.IsNullOrEmpty(Model.Att1))
         {
             @if (Model.Att1.Contains(".mp4") || Model.Att1.Contains(".mov"))
             {
@@ -21,7 +21,7 @@
             }
         }
 
-        @if (Model.Att2 is not null)
+        @if (!string.IsNullOrEmpty(Model.Att2))
         {
             @if (Model.Att2.Contains(".mp4") || Model.Att2.Contains(".mov"))
             {
@@ -40,15 +40,24 @@
 
     <div class="d-flex justify-content-between flex-row mt-5">
 
-        <div><i class="bi bi-heart"></i>@Model.LikesCount</div>
+        <div><i class="bi bi-broadcast"></i>@Model.LikesCount</div>
         <div><i class="bi bi-heart"></i> @Model.LikesCount</div>
-        <div><i class="bi bi-heart"></i> @Model.LikesCount</div>
+        <div><i class="bi bi-chat-left-quote"></i> @Model.LikesCount</div>
 
-        <img src="@Model.User.PfpLink" alt="User pfp" style="width: 100%; height: 80px; object-fit: cover" />
-        <div> @(Model.User.DisplayName + " (@" + @Model.User.ApplicationUser.UserName) </div>
+        @if (Model.User != null)
+        {
+            <img src="@Model.User.PfpLink" alt="User pfp" style="width: 100%; height: 80px; object-fit: cover" />
+            <div> 
+                @Model.User.DisplayName 
+                @if (Model.User.ApplicationUser != null)
+                {
+                    <text>(@Model.User.ApplicationUser.UserName)</text>
+                }
+            </div>
+        }
 
         <span class="alert-success px-1 align-content-right">
-            @(Model.DateCreated.ToString("H:m") + "   -   " + Model.DateCreated.ToString("MMM d, yyyy"))
+            @(Model.DateCreated.ToString("H:m") + "   -   " + Model.DateCreated.ToString("d MMM, yyyy"))
         </span>
 
     </div>

@@ -25,14 +25,26 @@ namespace BAtwitter_DAW_2526.Data
         {
             base.OnModelCreating(modelBuilder);
 
- 
+            // Id = ApplicationUserId
+            modelBuilder.Entity<UserProfile>(entity =>
+            {
+                entity.HasKey(up => up.Id);
+
+                entity.HasOne(up => up.ApplicationUser)
+                      .WithOne(au => au.UserProfile)
+                      .HasForeignKey<UserProfile>(up => up.Id)
+                      .HasPrincipalKey<ApplicationUser>(au => au.Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<Bookmark>(entity =>
             {
                 entity.HasKey(b => new { b.UserId, b.EchoId });
 
                 entity.HasOne(b => b.User)
                       .WithMany(u => u.Bookmarks)
-                      .HasForeignKey(b => b.UserId);
+                      .HasForeignKey(b => b.UserId)
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(b => b.Echo)
                       .WithMany(e => e.Bookmarks)
@@ -49,7 +61,8 @@ namespace BAtwitter_DAW_2526.Data
 
                 entity.HasOne(fu => fu.User)
                       .WithMany(u => u.FlockUsers)
-                      .HasForeignKey(fu => fu.UserId);
+                      .HasForeignKey(fu => fu.UserId)
+                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             modelBuilder.Entity<Interaction>(entity =>
@@ -58,7 +71,8 @@ namespace BAtwitter_DAW_2526.Data
 
                 entity.HasOne(i => i.User)
                       .WithMany(u => u.Interactions)
-                      .HasForeignKey(i => i.UserId);
+                      .HasForeignKey(i => i.UserId)
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(i => i.Echo)
                       .WithMany(e => e.Interactions)

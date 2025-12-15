@@ -10,7 +10,7 @@ namespace BAtwitter_DAW_2526.Models
     [Index(nameof(UserName), IsUnique = true)]
     public class ApplicationUser : IdentityUser
     {
-        public virtual UserProfile UserProfile { get; set; } = new UserProfile();
+        public virtual UserProfile? UserProfile { get; set; }
 
     }
 }

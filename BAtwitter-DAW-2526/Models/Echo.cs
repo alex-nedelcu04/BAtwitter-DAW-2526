@@ -9,7 +9,7 @@ namespace BAtwitter_DAW_2526.Models
         public int Id { get; set; }
 
         public int? FlockId { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         public int? CommParentId { get; set; } // comment
         public int? AmpParentId { get; set; } // amplifier
@@ -29,7 +29,7 @@ namespace BAtwitter_DAW_2526.Models
         public bool IsRemoved { get; set; } = false;
 
         public virtual Flock? Flock { get; set; }
-        public virtual UserProfile User { get; set; } = new UserProfile();
+        public virtual UserProfile? User { get; set; }
 
         //[ForeignKey(nameof(CommParentId))]
         //[InverseProperty(nameof(Comments))]
