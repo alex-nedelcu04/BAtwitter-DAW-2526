@@ -1,23 +1,38 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 
 <div class="card-body">
-    
-    <div class="card-text">@Model.Content</div>
+
+    <div class="d-flex justify-content-start align-items-md-center">
+        @if (Model.User != null)
+        {
+            <img src="@Model.User.PfpLink" alt="User pfp" class="rounded-circle align-content-right" style="width: 40px; height: auto" />
+            <div>
+                @Model.User.DisplayName
+                @if (Model.User.ApplicationUser != null)
+                {
+                    <text>@("(@" + Model.User.ApplicationUser.UserName + ")")</text>
+                }
+            </div>
+        }
+    </div>
+
+    <br/>
+    <div class="card-text" style="">@Model.Content</div>
+    <br />
 
     <div class="card-img">
         @if (!string.IsNullOrEmpty(Model.Att1))
         {
             @if (Model.Att1.Contains(".mp4") || Model.Att1.Contains(".mov"))
             {
-                <video width="550" height="300" controls>
+                <video width="@((!string.IsNullOrEmpty(Model.Att2)) ? "100%" : "50%")" height="450" controls>
                     <source src="@Model.Att1" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             }
             else
             {
-                <img src="@Model.Att1" alt="Article Image" style="width: 100%; height: 450px; object-fit: cover" />
-
+                <img src="@Model.Att1" alt="Article Image" width="@((!string.IsNullOrEmpty(Model.Att2)) ? "100%" : "50%")" style="height: 450px; object-fit: cover" />
             }
         }
 
@@ -25,39 +40,40 @@
         {
             @if (Model.Att2.Contains(".mp4") || Model.Att2.Contains(".mov"))
             {
-                <video width="550" height="300" controls>
+                <video width="@((!string.IsNullOrEmpty(Model.Att1)) ? "100%" : "50%")" height="450" controls>
                     <source src="@Model.Att2" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             }
             else
             {
-                <img src="@Model.Att2" alt="Article Image" style="width: 100%; height: 450px; object-fit: cover" />
+                <img src="@Model.Att2" alt="Article Image" width="@((!string.IsNullOrEmpty(Model.Att1)) ? "100%" : "50%")" style="height: 450px; object-fit: cover" />
             }
         }
     </div>
 
 
-    <div class="d-flex justify-content-between flex-row mt-5">
+    <div class="d-flex justify-content-start flex-row mt-5">
 
-        <div><i class="bi bi-broadcast"></i>@Model.LikesCount</div>
-        <div><i class="bi bi-heart"></i> @Model.LikesCount</div>
-        <div><i class="bi bi-chat-left-quote"></i> @Model.LikesCount</div>
+        <div class
+        <div><i class="bi bi-broadcast"></i>  @Model.ReboundCount</div>
+        <div><i class="bi bi-heart"></i>  @Model.LikesCount</div>
+        <div><i class="bi bi-chat-left-quote"></i>  @Model.CommentsCount</div>
 
         @if (Model.User != null)
         {
-            <img src="@Model.User.PfpLink" alt="User pfp" style="width: 100%; height: 80px; object-fit: cover" />
+            <img src="@Model.User.PfpLink" alt="User pfp" class="rounded-circle align-content-right" style="width: 80px; height: auto" />
             <div> 
                 @Model.User.DisplayName 
                 @if (Model.User.ApplicationUser != null)
                 {
-                    <text>(@Model.User.ApplicationUser.UserName)</text>
+                    <text>@("(@" + Model.User.ApplicationUser.UserName + ")")</text>
                 }
             </div>
         }
 
         <span class="alert-success px-1 align-content-right">
-            @(Model.DateCreated.ToString("H:m") + "   -   " + Model.DateCreated.ToString("d MMM, yyyy"))
+            @(Model.DateCreated.ToString("H:m") + "  -   " + Model.DateCreated.ToString("MMM d, yyyy"))
         </span>
 
     </div>

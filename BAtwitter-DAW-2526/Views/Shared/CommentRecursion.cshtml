@@ -1,0 +1,36 @@
+﻿@model BAtwitter_DAW_2526.Models.Echo
+
+<div class="container" style="margin-left: 0;">
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <div class="card">
+                <partial name="EchoInfo" model="@Model" />
+
+                <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@Model.Id">View Echo</a>
+
+                @if (Model.UserId == ViewBag.CurrentUser)
+                {
+                    <div class="d-flex flex-row justify-content-between mt-2">
+                        <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id">Modify Echo</a>
+                        <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id">
+                            <button class="btn btn-danger" type="submit">Delete Echo</button>
+                        </form>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Comments != null && Model.Comments.Any())
+            {
+                <div style="margin-left: 30px; border-left: 2px solid #ddd; padding-left: 15px; margin-top: 10px;">
+                    @foreach (var child in Model.Comments.OrderBy(c => c.DateCreated))
+                    {
+                        <partial name="CommentRecursion" model="@child" />
+                    }
+                </div>
+            }
+            <br />
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+</div>

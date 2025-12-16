@@ -14,15 +14,18 @@
 
 @foreach (var echo in ViewBag.Echoes)
 {
-    <div class="card">
+    @if (echo.CommParentId == null)
+    {
+        <div class="card">
 
-        <partial name="EchoInfo" model="echo"/>
+            <partial name="EchoInfo" model="echo" />
 
-        <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@echo.Id">View Echo</a>
+            <a class="btn btn-success" asp-controller="Echoes" asp-action="Show" asp-route-id="@echo.Id">View Echo</a>
 
-    </div>
+        </div>
 
-    <br />
-    <br />
+        <br />
+        <br />
+    }
 }
 
