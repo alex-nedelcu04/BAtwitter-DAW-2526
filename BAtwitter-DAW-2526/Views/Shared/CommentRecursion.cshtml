@@ -3,7 +3,7 @@
 <div class="container" style="margin-left: 0;">
     <div class="row">
         <div class="col-md-2"></div>
-        <div class="col-md-8">
+        <div>
             <div class="card">
                 <partial name="EchoInfo" model="@Model" />
 
@@ -11,7 +11,7 @@
 
                 @if (Model.UserId == ViewBag.CurrentUser)
                 {
-                    <div class="d-flex flex-row justify-content-between mt-2">
+                    <div class="d-flex flex-row justify-content-between">
                         <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id">Modify Echo</a>
                         <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id">
                             <button class="btn btn-danger" type="submit">Delete Echo</button>
