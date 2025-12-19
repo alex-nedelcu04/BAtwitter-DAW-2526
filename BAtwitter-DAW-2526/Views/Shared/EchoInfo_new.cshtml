@@ -1,0 +1,166 @@
+﻿@model BAtwitter_DAW_2526.Models.Echo
+@using System.IO
+
+<div class="card shadow-sm mb-5 echo-card" data-echo-url="@Url.Action("Show", "Echoes", new { id = Model.Id })">
+    <div class="card-body">
+
+        <!-- HEADER: avatar + nume + username + edited at -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+
+            <div class="d-flex align-items-center">
+                @if (Model.User != null && !string.IsNullOrEmpty(Model.User.PfpLink))
+                {
+                    <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                    style="width: 48px; height: 48px; object-fit: cover;" />
+                }
+                else
+                {
+                    <div class="rounded-circle bg-secondary me-2" style="width: 48px; height: 48px;"></div>
+                }
+
+                <div class="d-flex flex-column">
+                    <span class="fw-semibold">
+                        @(Model.User?.DisplayName ?? "Unknown user")
+                    </span>
+
+                    @if (Model.User?.ApplicationUser != null)
+                    {
+                        <small class="text-muted">
+                            @("@" + Model.User.ApplicationUser.UserName)
+                        </small>
+                    }
+                </div>
+            </div>
+
+            <div class="text-end small text-muted">
+                @* "edited at" doar dacă a fost editat *@
+                @if (Model.DateEdited.HasValue && Model.DateEdited.Value > Model.DateCreated)
+                {
+                    <div class="text-muted">
+                        edited at: @Model.DateEdited.Value.ToString("HH:mm") - @Model.DateEdited.Value.ToString("MMM d, yyyy")
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- TEXT POSTARE -->
+        <div class="mb-3 post-click-area">
+            @if (!string.IsNullOrWhiteSpace(Model.Content))
+            {
+                @Html.Raw(Html.Encode(Model.Content).Replace("\n", "<br />"))
+            }
+        </div>
+
+        <!-- ATAȘAMENTE -->
+        @{
+            var attCount = Convert.ToInt32(!string.IsNullOrEmpty(Model.Att1)) + Convert.ToInt32(!string.IsNullOrEmpty(Model.Att2));
+        }
+
+        @if (attCount > 0)
+        {
+            <div class="row g-3 mb-3">
+
+                @* ATTACHMENT #1 *@
+                @if (!string.IsNullOrEmpty(Model.Att1))
+                {
+                    var ext1 = System.IO.Path.GetExtension(Model.Att1).ToLower();
+                    var isImg1 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext1);
+                    var isVid1 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext1);
+                    var colClass = attCount == 1 ? "col-12" : "col-md-6";
+                    
+                    <div class="@colClass">
+                        <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
+                            @if (isImg1)
+                            {
+                                <!-- CLICK PE POZĂ => TAB NOU -->
+                                <a href="@Model.Att1"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="d-block w-100 h-100">
+                                    <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
+                                </a>
+                            }
+                            else if (isVid1)
+                            {
+                                <video src="@Model.Att1" class="w-100 h-100" style="object-fit: cover;" controls></video>
+                            }
+                            else
+                            {
+                                <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
+                                    Attachment #1
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ATTACHMENT #2 *@
+                @if (!string.IsNullOrEmpty(Model.Att2))
+                {
+    
+                    var ext2 = System.IO.Path.GetExtension(Model.Att2).ToLower();
+                    var isImg2 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext2);
+                    var isVid2 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext2);
+                    var colClass = attCount == 1 ? "col-12" : "col-md-6";
+                    
+                    <div class="@colClass">
+                        <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
+                            @if (isImg2)
+                            {
+                                <!-- CLICK PE POZĂ => TAB NOU -->
+                                <a href="@Model.Att2"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="d-block w-100 h-100">
+                                    <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
+                                </a>
+                            }
+                            else if (isVid2)
+                            {
+                                <video src="@Model.Att2" class="w-100 h-100" style="object-fit: cover;" controls></video>
+                            }
+                            else
+                            {
+                                <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
+                                    Attachment #2
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+            </div>
+        }
+
+        <!-- FOOTER: interacțiuni + created at -->
+        <div class="d-flex justify-content-between align-items-center mt-2">
+
+            <div class="small text-muted d-flex align-items-center flex-wrap">
+                <span class="me-3 d-flex align-items-center">
+                    <i class="bi bi-chat me-1"></i> @Model.CommentsCount
+                </span>
+
+                <span class="me-3 d-flex align-items-center">
+                    <i class="bi bi-arrow-repeat me-1"></i> @Model.ReboundCount
+                </span>
+
+                <span class="me-3 d-flex align-items-center">
+                    <i class="bi bi-megaphone me-1"></i> @Model.AmplifierCount
+                </span>
+
+                <span class="me-3 d-flex align-items-center">
+                    <i class="bi bi-bookmark me-1"></i> @Model.BookmarksCount
+                </span>
+
+                <span class="d-flex align-items-center">
+                    <i class="bi bi-heart me-1"></i> @Model.LikesCount
+                </span>
+            </div>
+
+            <div class="small text-muted text-end">
+                created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
+            </div>
+        </div>
+
+    </div>
+</div>

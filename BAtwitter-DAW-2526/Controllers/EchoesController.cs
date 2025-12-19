@@ -265,7 +265,7 @@ namespace BAtwitter_DAW_2526.Controllers
         // Se verifica rolul userului pentru a vedea daca poate edita
         [HttpPost]
         //[Authorize(Roles = "Editor,Admin")]
-        public IActionResult Edit(int id, Echo reqEcho, IFormFile? att1, IFormFile? att2)
+        public IActionResult Edit(int id, Echo reqEcho, IFormFile? att1, IFormFile? att2, bool RemoveAtt1 = false, bool RemoveAtt2 = false)
         {
             Echo? echo = db.Echoes.Find(id);
 
@@ -281,6 +281,21 @@ namespace BAtwitter_DAW_2526.Controllers
                 TempData["message"] = "You do not have the necessary permissions to modify this article.";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
+            }
+
+            echo.Content = reqEcho.Content;
+
+            // Active after pressing delete and no new files
+            if (RemoveAtt1 && !string.IsNullOrEmpty(echo.Att1))
+            {
+                DeletePhysicalFile(echo.Att1);
+                echo.Att1 = null;
+            }
+
+            if (RemoveAtt2 && !string.IsNullOrEmpty(echo.Att2))
+            {
+                DeletePhysicalFile(echo.Att2);
+                echo.Att2 = null;
             }
 
             if (att1 != null && att1.Length > 0)
@@ -304,9 +319,6 @@ namespace BAtwitter_DAW_2526.Controllers
                     return View(echo);
                 }
             }
-
-
-            echo.Content = reqEcho.Content;
 
 
             if (att1 != null && att1.Length > 0)
@@ -487,6 +499,19 @@ namespace BAtwitter_DAW_2526.Controllers
                     break;
             }
             return current?.Id ?? echo.Id;
+        }
+
+        private void DeletePhysicalFile(string relativePath)
+        {
+            var physicalPath = Path.Combine(
+                _env.WebRootPath,
+                relativePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+            );
+
+            if (System.IO.File.Exists(physicalPath))
+            {
+                System.IO.File.Delete(physicalPath);
+            }
         }
 
 

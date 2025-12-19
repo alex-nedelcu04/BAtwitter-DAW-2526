@@ -5,3 +5,7 @@
 .container img, .container video {
     width: 33.33%;
 }
+
+.echo-card {
+    cursor: pointer;
+}

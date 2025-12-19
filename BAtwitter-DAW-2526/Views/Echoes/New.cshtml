@@ -1,40 +1,149 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 
-
-<h2 class="text-center mt-5">Create Echo</h2>
-
+<h2 class="text-center mt-3">Create Echo</h2>
 <br />
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-6 offset-3">
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-7">
             <form enctype="multipart/form-data" method="post" asp-controller="Echoes" asp-action="New">
+                
                 <div asp-validation-summary="All" class="text-danger"></div>
 
-                <div class="form-group">
+                <div class="mb-3">
                     <label asp-for="Content" class="form-label">Content</label>
-                    <br />
-                    <textarea asp-for="Content" class="form-control"></textarea>
+                    <textarea asp-for="Content" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
-                    <br /><br />
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Att1">Attachment #1</label>
-                    <input asp-for="Att1" class="form-control" type="file" />
-                    <span asp-validation-for="Att1" class="text-danger"></span>
-                    <br />
+                <!-- butonul care înlocuiește input-urile de fișier -->
+                <div class="mb-3">
+                    <button type="button" id="addMediaBtn" title="Add image / video" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-images"></i>
+                    </button>
+                    <small class="text-muted mt-1" style="font-size: 12px !important; font-style: oblique !important">
+                        At most 2 files with these formats: jpg, jpeg, png, webp, gif, mp4, mov.
+                    </small>
+
+                    <!-- aici se afișează erorile de validare puse în controller pe Att1 / Att2 -->
+                    <span asp-validation-for="Att1" class="text-danger d-block"></span>
+                    <span asp-validation-for="Att2" class="text-danger d-block"></span>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Att2">Attachment #2</label>
-                    <input asp-for="Att2" class="form-control" type="file" />
-                    <span asp-validation-for="Att2" class="text-danger"></span>
-                    <br />
-                </div>
+                <!-- input-urile reale, ascunse -->
+                <input id="att1" name="att1" type="file" class="d-none" accept="image/*,video/*" />
+                <input id="att2" name="att2" type="file" class="d-none" accept="image/*,video/*" />
 
-                <button class="btn btn-success" type="submit">Create Echo</button>
+                <!-- preview pentru atașamente -->
+                <div id="previewContainer" class="d-flex flex-wrap gap-3"></div>
+
+                <button class="btn btn-success mt-3" type="submit">Create Echo</button>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const maxSlots = 2;
+        const fileInputs = [
+            document.getElementById('att1'),
+            document.getElementById('att2')
+        ];
+        const previewContainer = document.getElementById('previewContainer');
+        const addMediaBtn = document.getElementById('addMediaBtn');
+
+        // Când apeși butonul, găsește primul input liber și dă-i click()
+        addMediaBtn.addEventListener('click', () => {
+            const freeInput = fileInputs.find(i => !i.files || i.files.length === 0);
+            if (!freeInput) {
+                alert('Poți încărca maximum ' + maxSlots + ' fișiere.');
+                return;
+            }
+            freeInput.click();
+        });
+
+        // Event pentru fiecare input de fișier
+        fileInputs.forEach((input, index) => {
+            input.addEventListener('change', () => handleFileChange(input, index));
+        });
+
+        function handleFileChange(input, index) {
+            const slotId = 'slot-' + index;
+
+            // Șterge preview-ul vechi pentru acest slot, dacă există
+            const existing = previewContainer.querySelector('[data-slot="' + slotId + '"]');
+            if (existing) {
+                existing.remove();
+            }
+
+            if (!input.files || input.files.length === 0) {
+                updateAddButtonState();
+                return;
+            }
+
+            const file = input.files[0];
+
+            const card = document.createElement('div');
+            card.className = 'position-relative border rounded-3 p-1';
+            card.style.width = '150px';
+            card.style.height = '150px';
+            card.dataset.slot = slotId;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'btn btn-sm btn-light position-absolute';
+            removeBtn.style.top = '4px';
+            removeBtn.style.right = '4px';
+            removeBtn.addEventListener('click', () => {
+                input.value = '';       // ștergem fișierul din input
+                card.remove();          // ștergem preview-ul
+                updateAddButtonState();
+            });
+
+            const label = document.createElement('div');
+            label.className = 'small text-truncate mt-1';
+            label.title = file.name;
+            label.textContent = file.name;
+
+            let mediaElement;
+
+            if (file.type.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+                mediaElement.src = URL.createObjectURL(file);
+                mediaElement.onload = () => URL.revokeObjectURL(mediaElement.src);
+                mediaElement.style.width = '100%';
+                mediaElement.style.height = '100%';
+                mediaElement.style.objectFit = 'cover';
+                mediaElement.classList.add('rounded-2');
+            } else if (file.type.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.src = URL.createObjectURL(file);
+                mediaElement.style.width = '100%';
+                mediaElement.style.height = '100%';
+                mediaElement.classList.add('rounded-2');
+                mediaElement.muted = true;
+                mediaElement.loop = true;
+                mediaElement.autoplay = true;
+            } else {
+                mediaElement = document.createElement('div');
+                mediaElement.className = 'd-flex align-items-center justify-content-center w-100 h-100';
+                mediaElement.textContent = 'Tip neacceptat';
+            }
+
+            card.appendChild(removeBtn);
+            card.appendChild(mediaElement);
+            card.appendChild(label);
+            previewContainer.appendChild(card);
+
+            updateAddButtonState();
+        }
+
+        function updateAddButtonState() {
+            const usedSlots = fileInputs.filter(i => i.files && i.files.length > 0).length;
+            addMediaBtn.disabled = usedSlots >= maxSlots;
+        }
+    </script>
+}

@@ -1,43 +1,294 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 
 <h2 class="text-center mt-5">Modify Echo</h2>
-
 <br />
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-6 offset-3">
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-7">
 
             <form method="post" enctype="multipart/form-data" asp-action="Edit" asp-controller="Echoes" asp-route-id="@Model.Id">
-                <div asp-validation-summary="All" class="text-danger"></div>
 
-                <div class="form-group">
+                <!--<div asp-validation-summary="All" class="text-danger"></div> -->
+
+                <div class="mb-4">
                     <label asp-for="Content" class="form-label">Description</label>
-                    <br />
-                    <textarea asp-for="Content" class="form-control"></textarea>
+                    <textarea asp-for="Content" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
-                    <br /><br />
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Att1">Attachment #1</label>
-                    <input asp-for="Att1" class="form-control" type="file" />
-                    <span asp-validation-for="Att1" class="text-danger"></span>
-                    <br />
+                <!-- butonul media -->
+                <div class="mb-3">
+                    <button type="button" id="addMediaBtn" title="Add image / video" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-images"></i>
+                    </button>
+                    <small class="text-muted mt-1" style="font-size: 12px !important; font-style: oblique !important">
+                        At most 2 files with these formats: jpg, jpeg, png, webp, gif, mp4, mov.
+                    </small>
+
+                    <span asp-validation-for="Att1" class="text-danger d-block"></span>
+                    <span asp-validation-for="Att2" class="text-danger d-block"></span>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Att2">Attachment #2</label>
-                    <input asp-for="Att2" class="form-control" type="file" />
-                    <span asp-validation-for="Att2" class="text-danger"></span>
-                    <br />
+                <!-- flag-uri pentru ștergerea atașamentelor existente -->
+                <input type="hidden" id="RemoveAtt1" name="RemoveAtt1" value="false" />
+                <input type="hidden" id="RemoveAtt2" name="RemoveAtt2" value="false" />
+
+                <!-- input-urile reale, ascunse -->
+                <input id="att1" name="att1" type="file" class="d-none" accept="image/*,video/*" />
+                <input id="att2" name="att2" type="file" class="d-none" accept="image/*,video/*" />
+
+                <!-- preview, inclusiv fișierele deja existente -->
+                <div id="previewContainer" class="d-flex flex-wrap gap-3">
+
+                    @* Att1 existent *@
+                    @if (!string.IsNullOrEmpty(Model.Att1))
+                    {
+                        var ext1 = System.IO.Path.GetExtension(Model.Att1).ToLower();
+                        var isImg1 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext1);
+                        var isVid1 = new[] { ".mp4", ".mov" }.Contains(ext1);
+                        var fileName1 = System.IO.Path.GetFileName(Model.Att1);
+
+                        <div class="position-relative border rounded-3 p-1"
+                             style="width:150px;height:150px"
+                             data-slot="slot-0"
+                             data-existing="true">
+
+                            <button type="button"
+                                    class="btn btn-sm btn-light position-absolute btn-remove-existing"
+                                    style="top:4px;right:4px"
+                                    data-remove-flag-id="RemoveAtt1">
+                                &times;
+                            </button>
+
+                            @if (isImg1)
+                            {
+                                <img src="@Model.Att1"
+                                     class="w-100 h-100 rounded-2"
+                                     style="object-fit:cover" />
+                            }
+                            else if (isVid1)
+                            {
+                                <video src="@Model.Att1"
+                                       class="w-100 h-100 rounded-2"
+                                       muted
+                                       loop
+                                       autoplay></video>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center w-100 h-100">
+                                    Existing file
+                                </div>
+                            }
+
+                            <div class="small text-truncate mt-1" title="@fileName1">
+                                @fileName1
+                            </div>
+                        </div>
+                    }
+
+                    @* Att2 existent *@
+                    @if (!string.IsNullOrEmpty(Model.Att2))
+                    {
+                        var ext2 = System.IO.Path.GetExtension(Model.Att2).ToLower();
+                        var isImg2 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext2);
+                        var isVid2 = new[] { ".mp4", ".mov" }.Contains(ext2);
+                        var fileName2 = System.IO.Path.GetFileName(Model.Att2);
+
+                        <div class="position-relative border rounded-3 p-1"
+                             style="width:150px;height:150px"
+                             data-slot="slot-1"
+                             data-existing="true">
+
+                            <button type="button"
+                                    class="btn btn-sm btn-light position-absolute btn-remove-existing"
+                                    style="top:4px;right:4px"
+                                    data-remove-flag-id="RemoveAtt2">
+                                &times;
+                            </button>
+
+                            @if (isImg2)
+                            {
+                                <img src="@Model.Att2"
+                                     class="w-100 h-100 rounded-2"
+                                     style="object-fit:cover" />
+                            }
+                            else if (isVid2)
+                            {
+                                <video src="@Model.Att2"
+                                       class="w-100 h-100 rounded-2"
+                                       muted
+                                       loop
+                                       autoplay></video>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center w-100 h-100">
+                                    Existing file
+                                </div>
+                            }
+
+                            <div class="small text-truncate mt-1" title="@fileName2">
+                                @fileName2
+                            </div>
+                        </div>
+                    }
                 </div>
-                
-                <button class="btn btn-sm btn-success" type="submit">Modify Echo</button>
+
+                <button class="btn btn-sm btn-success mt-4" type="submit">Modify Echo</button>
 
             </form>
-            
+
         </div>
     </div>
 </div>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const maxSlots = 2;
+        const fileInputs = [
+            document.getElementById('att1'),
+            document.getElementById('att2')
+        ];
+        const previewContainer = document.getElementById('previewContainer');
+        const addMediaBtn = document.getElementById('addMediaBtn');
+        const removeFlags = [
+            document.getElementById('RemoveAtt1'),
+            document.getElementById('RemoveAtt2')
+        ];
+
+        // Buton Add media
+        addMediaBtn.addEventListener('click', () => {
+            const freeInput = getFirstFreeInput();
+            if (!freeInput) {
+                alert('Poți avea maximum ' + maxSlots + ' fișiere (inclusiv cele deja încărcate).');
+                return;
+            }
+            freeInput.click();
+        });
+
+        function getFirstFreeInput() {
+            // slot e liber dacă: inputul nu are fișier ȘI nu există preview pentru slotul respectiv
+            for (let i = 0; i < fileInputs.length; i++) {
+                const input = fileInputs[i];
+                const hasFile = input && input.files && input.files.length > 0;
+                const hasPreview = previewContainer.querySelector('[data-slot="slot-' + i + '"]');
+                if (!hasFile && !hasPreview) return input;
+            }
+            return null;
+        }
+
+        // Change handler pentru fișiere noi
+        fileInputs.forEach((input, index) => {
+            if (!input) return;
+            input.addEventListener('change', () => handleFileChange(input, index));
+        });
+
+        function handleFileChange(input, index) {
+            const slotId = 'slot-' + index;
+            const oldCard = previewContainer.querySelector('[data-slot="' + slotId + '"]');
+
+            // Dacă exista un fișier vechi în acest slot, îl marcăm ca Remove (va fi înlocuit)
+            if (oldCard && oldCard.dataset.existing === 'true' && removeFlags[index]) {
+                removeFlags[index].value = 'true';
+            }
+
+            if (oldCard) {
+                oldCard.remove();
+            }
+
+            if (!input.files || input.files.length === 0) {
+                updateAddButtonState();
+                return;
+            }
+
+            const file = input.files[0];
+
+            const card = document.createElement('div');
+            card.className = 'position-relative border rounded-3 p-1';
+            card.style.width = '150px';
+            card.style.height = '150px';
+            card.dataset.slot = slotId;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'btn btn-sm btn-light position-absolute';
+            removeBtn.style.top = '4px';
+            removeBtn.style.right = '4px';
+            removeBtn.addEventListener('click', () => {
+                input.value = '';       // ștergem fișierul din input
+                card.remove();          // ștergem preview-ul
+                updateAddButtonState();
+            });
+
+            const label = document.createElement('div');
+            label.className = 'small text-truncate mt-1';
+            label.title = file.name;
+            label.textContent = file.name;
+
+            let mediaElement;
+
+            if (file.type.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+                mediaElement.src = URL.createObjectURL(file);
+                mediaElement.onload = () => URL.revokeObjectURL(mediaElement.src);
+                mediaElement.style.width = '100%';
+                mediaElement.style.height = '100%';
+                mediaElement.style.objectFit = 'cover';
+                mediaElement.classList.add('rounded-2');
+            } else if (file.type.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.src = URL.createObjectURL(file);
+                mediaElement.style.width = '100%';
+                mediaElement.style.height = '100%';
+                mediaElement.classList.add('rounded-2');
+                mediaElement.muted = true;
+                mediaElement.loop = true;
+                mediaElement.autoplay = true;
+            } else {
+                mediaElement = document.createElement('div');
+                mediaElement.className = 'd-flex align-items-center justify-content-center w-100 h-100';
+                mediaElement.textContent = 'Tip neacceptat';
+            }
+
+            card.appendChild(removeBtn);
+            card.appendChild(mediaElement);
+            card.appendChild(label);
+            previewContainer.appendChild(card);
+
+            updateAddButtonState();
+        }
+
+        // Butoanele X pentru atașamentele existente (de pe server)
+        document.querySelectorAll('.btn-remove-existing').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const flagId = btn.getAttribute('data-remove-flag-id');
+                const flagInput = document.getElementById(flagId);
+                if (flagInput) {
+                    flagInput.value = 'true';
+                }
+
+                const card = btn.closest('[data-slot]');
+                if (card) {
+                    card.remove();
+                }
+
+                updateAddButtonState();
+            });
+        });
+
+        function updateAddButtonState() {
+            const usedInputs = fileInputs.filter(i => i && i.files && i.files.length > 0).length;
+            const existingCards = previewContainer.querySelectorAll('[data-existing="true"]').length;
+            const totalUsed = usedInputs + existingCards;
+
+            addMediaBtn.disabled = totalUsed >= maxSlots;
+        }
+
+        // La încărcarea paginii, actualizăm starea butonului ținând cont de atașamentele existente
+        updateAddButtonState();
+    </script>
+}
