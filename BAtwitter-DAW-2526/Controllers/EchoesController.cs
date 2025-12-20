@@ -141,7 +141,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att1.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("Image", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    ModelState.AddModelError("Att1", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     return View(echo);
                 }
             }
@@ -152,7 +152,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att2.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("Image", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    ModelState.AddModelError("Att2", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     return View(echo);
                 }
             }
@@ -255,7 +255,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
-                TempData["message"] = "You do not have the necessary permissions to modify this article.";
+                TempData["message"] = "You are not authorized to modify this echo.";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
@@ -278,7 +278,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (echo.UserId != _userManager.GetUserId(User))
             {
-                TempData["message"] = "You do not have the necessary permissions to modify this article.";
+                TempData["message"] = "You are not authorized to modify this echo.";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
@@ -465,9 +465,23 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", originalEchoId);
 
         }
+
         // other methods
         // Conditii de afisare pt butoanele de afisare / stergere din views
+        private void SetAccessRights()
+        {
+            ViewBag.VisibleShowDelete = false;
 
+            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            ViewBag.IsAdmin = User.IsInRole("Admin");
+
+            if (User.IsInRole("Editor"))
+            {
+                ViewBag.VisibleShowDelete = true;
+            }
+        }
+
+        // Incarcarea comentariilor pt arborele de relatii al postarii curente
         private void LoadCommentsRecursively(Echo echo)
         {
             if (echo.Comments is null)
@@ -489,6 +503,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
+        // highest ancestor
         private int GetOriginalEchoId(Echo echo)
         {
             Echo? current = echo;
@@ -501,6 +516,7 @@ namespace BAtwitter_DAW_2526.Controllers
             return current?.Id ?? echo.Id;
         }
 
+        // Stergerea fisierului din wwwroot
         private void DeletePhysicalFile(string relativePath)
         {
             var physicalPath = Path.Combine(
@@ -511,20 +527,6 @@ namespace BAtwitter_DAW_2526.Controllers
             if (System.IO.File.Exists(physicalPath))
             {
                 System.IO.File.Delete(physicalPath);
-            }
-        }
-
-
-        private void SetAccessRights()
-        {
-            ViewBag.VisibleShowDelete = false;
-
-            ViewBag.CurrentUser = _userManager.GetUserId(User);
-            ViewBag.IsAdmin = User.IsInRole("Admin");
-
-            if (User.IsInRole("Editor"))
-            {
-                ViewBag.VisibleShowDelete = true;
             }
         }
     }
