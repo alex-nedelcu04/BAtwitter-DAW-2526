@@ -14,7 +14,10 @@ namespace BAtwitter_DAW_2526.Models
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "The user will have a profile picture \uD83D (default if not selected)")]
-        public string PfpLink { get; set; } = string.Empty;
+        public string PfpLink { get; set; } = "/Resources/Images/user_default_pfp.jpg";
+
+        [Required(ErrorMessage = "The user will have a banner \uD83D (default if not selected)")]
+        public string BannerLink { get; set; } = "/Resources/Images/banner_default.jpg";
         public DateTime JoinDate { get; set; } = DateTime.Now;
         public string? Pronouns { get; set; }
         public string AccountStatus { get; set; } = "active";

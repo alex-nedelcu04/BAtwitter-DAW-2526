@@ -11,6 +11,14 @@
                 <div asp-validation-summary="All" class="text-danger"></div>
 
                 <div class="mb-3">
+                    <label asp-for="FlockId" class="form-label">Flock (Optional)</label>
+                    <select asp-for="FlockId" asp-items="ViewBag.Flocks" class="form-select">
+                        <option value="">-- Select a Flock (Optional) --</option>
+                    </select>
+                    <span asp-validation-for="FlockId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
                     <label asp-for="Content" class="form-label">Content</label>
                     <textarea asp-for="Content" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
@@ -37,7 +45,7 @@
                 <!-- preview pentru atașamente -->
                 <div id="previewContainer" class="d-flex flex-wrap gap-3"></div>
 
-                <button class="btn btn-success mt-3" type="submit">Create Echo</button>
+                <button class="btn btn-success mt-4" type="submit">Create Echo</button>
             </form>
         </div>
     </div>

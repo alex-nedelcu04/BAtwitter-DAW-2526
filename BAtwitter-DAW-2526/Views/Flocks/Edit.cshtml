@@ -1,0 +1,223 @@
+﻿@model BAtwitter_DAW_2526.Models.Flock
+
+<h2 class="text-center mt-3">Edit Flock</h2>
+<br />
+
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-7">
+            <form enctype="multipart/form-data" method="post" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id">
+
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label">Flock Name</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- Profile Picture Section -->
+                <div class="mb-3">
+                    <label class="form-label">Profile Picture</label>
+                    <button type="button" id="addPfpBtn" title="Change profile picture" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person-circle"></i> Change Profile Picture
+                    </button>
+                    <small class="text-muted mt-1 d-block" style="font-size: 12px !important; font-style: oblique !important">
+                        Accepted formats: jpg, jpeg, png, webp.
+                    </small>
+                    <span asp-validation-for="PfpLink" class="text-danger d-block"></span>
+                </div>
+
+                <input id="pfp" name="pfp" type="file" class="d-none" accept="image/*" />
+
+                <!-- Preview for Profile Picture -->
+                <div id="pfpPreviewContainer" class="mb-4">
+                    @if (!string.IsNullOrEmpty(Model.PfpLink))
+                    {
+                        <div class="position-relative border rounded-3 p-2" style="width: 200px; height: 200px;">
+                            <button type="button" id="removePfpBtn" class="btn btn-sm btn-danger position-absolute" style="top: 8px; right: 8px; z-index: 10;">
+                                <i class="bi bi-trash"></i> 
+                            </button>
+                            <img src="@Model.PfpLink" alt="Current Profile Picture" 
+                                 style="width: 100%; height: 100%; object-fit: cover;" 
+                                 class="rounded-circle" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Hidden checkbox for removing pfp -->
+                <input type="checkbox" id="removePfp" name="removePfp" value="true" style="display: none;" />
+
+                <!-- Banner Section -->
+                <div class="mb-3">
+                    <label class="form-label">Banner</label>
+                    <button type="button" id="addBannerBtn" title="Change banner" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-image"></i> Change Banner
+                    </button>
+                    <small class="text-muted mt-1 d-block" style="font-size: 12px !important; font-style: oblique !important">
+                        Accepted formats: jpg, jpeg, png, webp.
+                    </small>
+                    <span class="text-danger d-block" id="bannerError"></span>
+                </div>
+
+                <input id="banner" name="banner" type="file" class="d-none" accept="image/*" />
+
+                <!-- Preview for Banner -->
+                <div id="bannerPreviewContainer" class="mb-4">
+                    @if (!string.IsNullOrEmpty(Model.BannerLink))
+                    {
+                        <div class="position-relative border rounded-3 p-1" style="width: 100%; height: 200px; max-width: 600px;">
+                            <button type="button" id="removeBannerBtn" class="btn btn-sm btn-danger position-absolute" style="top: 8px; right: 8px; z-index: 10;">
+                                <i class="bi bi-trash"></i> 
+                            </button>
+                            <img src="@Model.BannerLink" alt="Current Banner" 
+                                 style="width: 100%; height: 100%; object-fit: cover;" 
+                                 class="rounded-2" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Hidden checkbox for removing banner -->
+                <input type="checkbox" id="removeBanner" name="removeBanner" value="true" style="display: none;" />
+
+                <button class="btn btn-success mt-4" type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Profile Picture Preview
+        const pfpInput = document.getElementById('pfp');
+        const pfpPreviewContainer = document.getElementById('pfpPreviewContainer');
+        const addPfpBtn = document.getElementById('addPfpBtn');
+        const removePfpInput = document.getElementById('removePfp');
+        const removePfpBtn = document.getElementById('removePfpBtn');
+
+        addPfpBtn.addEventListener('click', () => {
+            pfpInput.click();
+        });
+
+        pfpInput.addEventListener('change', () => handlePfpChange());
+
+        if (removePfpBtn) {
+            removePfpBtn.addEventListener('click', () => {
+                removePfpInput.checked = true;
+                pfpPreviewContainer.innerHTML = '<p class="text-muted">Profile picture will be removed on save.</p>';
+            });
+        }
+
+        function handlePfpChange() {
+            // Clear existing preview
+            pfpPreviewContainer.innerHTML = '';
+            removePfpInput.checked = false;
+
+            if (!pfpInput.files || pfpInput.files.length === 0) {
+                return;
+            }
+
+            const file = pfpInput.files[0];
+
+            const previewCard = document.createElement('div');
+            previewCard.className = 'position-relative border rounded-3 p-2';
+            previewCard.style.width = '200px';
+            previewCard.style.height = '200px';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'btn btn-sm btn-light position-absolute';
+            removeBtn.style.top = '8px';
+            removeBtn.style.right = '8px';
+            removeBtn.style.zIndex = '10';
+            removeBtn.addEventListener('click', () => {
+                pfpInput.value = '';
+                previewCard.remove();
+                removePfpInput.checked = false;
+            });
+
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.onload = () => URL.revokeObjectURL(img.src);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.classList.add('rounded-circle');
+
+            previewCard.appendChild(removeBtn);
+            previewCard.appendChild(img);
+            pfpPreviewContainer.appendChild(previewCard);
+        }
+
+        // Banner Preview
+        const bannerInput = document.getElementById('banner');
+        const bannerPreviewContainer = document.getElementById('bannerPreviewContainer');
+        const addBannerBtn = document.getElementById('addBannerBtn');
+        const removeBannerInput = document.getElementById('removeBanner');
+        const removeBannerBtn = document.getElementById('removeBannerBtn');
+
+        addBannerBtn.addEventListener('click', () => {
+            bannerInput.click();
+        });
+
+        bannerInput.addEventListener('change', () => handleBannerChange());
+
+        if (removeBannerBtn) {
+            removeBannerBtn.addEventListener('click', () => {
+                removeBannerInput.checked = true;
+                bannerPreviewContainer.innerHTML = '<p class="text-muted">Banner will be removed on save.</p>';
+            });
+        }
+
+        function handleBannerChange() {
+            // Clear existing preview
+            bannerPreviewContainer.innerHTML = '';
+            removeBannerInput.checked = false;
+
+            if (!bannerInput.files || bannerInput.files.length === 0) {
+                return;
+            }
+
+            const file = bannerInput.files[0];
+
+            const previewCard = document.createElement('div');
+            previewCard.className = 'position-relative border rounded-3 p-1';
+            previewCard.style.width = '100%';
+            previewCard.style.height = '200px';
+            previewCard.style.maxWidth = '600px';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'btn btn-sm btn-light position-absolute';
+            removeBtn.style.top = '8px';
+            removeBtn.style.right = '8px';
+            removeBtn.style.zIndex = '10';
+            removeBtn.addEventListener('click', () => {
+                bannerInput.value = '';
+                previewCard.remove();
+                removeBannerInput.checked = false;
+            });
+
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.onload = () => URL.revokeObjectURL(img.src);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.classList.add('rounded-2');
+
+            previewCard.appendChild(removeBtn);
+            previewCard.appendChild(img);
+            bannerPreviewContainer.appendChild(previewCard);
+        }
+    </script>
+}

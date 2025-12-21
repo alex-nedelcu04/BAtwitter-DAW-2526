@@ -30,6 +30,13 @@
                             @("@" + Model.User.ApplicationUser.UserName)
                         </small>
                     }
+
+                    @if (Model.Flock != null)
+                    {
+                        <small class="text-primary fw-semibold">
+                            @Model.Flock.Name
+                        </small>
+                    }
                 </div>
             </div>
 
@@ -74,8 +81,8 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg1)
                             {
-                                <!-- CLICK PE POZĂ => TAB NOU -->
-                                <a href="@Model.Att1" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
+                                <!-- CLICK PE POZĂ => REDIRECTEAZĂ ÎN ACELAȘI TAB -->
+                                <a href="@Model.Att1" class="d-block w-100 h-100">
                                     <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
                             }
@@ -106,8 +113,8 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg2)
                             {
-                                <!-- CLICK PE POZĂ => TAB NOU -->
-                                <a href="@Model.Att2" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
+                                <!-- CLICK PE POZĂ => REDIRECTEAZĂ ÎN ACELAȘI TAB -->
+                                <a href="@Model.Att2" class="d-block w-100 h-100">
                                     <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
                             }

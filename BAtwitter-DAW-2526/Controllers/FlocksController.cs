@@ -37,7 +37,13 @@ namespace BAtwitter_DAW_2526.Controllers
         public IActionResult Index()
         {
             SortedDictionary<int, Echo?> echoes = [];
-            var flocks = db.Flocks.OrderByDescending(ech => ech.DateCreated);
+            var flocks = db.Flocks
+                .Include(f => f.Admin)
+                    .ThenInclude(a => a.ApplicationUser)
+                .Include(f => f.Echos)
+                    .ThenInclude(e => e.User)
+                        .ThenInclude(u => u.ApplicationUser)
+                .OrderByDescending(ech => ech.DateCreated);
 
             foreach (var fl in flocks)
             {
@@ -86,11 +92,11 @@ namespace BAtwitter_DAW_2526.Controllers
             // Validate file extensions before saving
             if (pfp != null && pfp.Length > 0)
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" }; // ".gif", ".mp4", ".mov" - sa punem moving banners and stuff? ar fi cam complex
+                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" }; 
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif) or a video??? (mp4, mov).");
+                    ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp).");
                     return View(flock);
                 }
             }
@@ -102,7 +108,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif) or a video? Probably not (mp4, mov).");
+                    ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp).");
                     return View(flock);
                 }
             }
@@ -142,7 +148,7 @@ namespace BAtwitter_DAW_2526.Controllers
                         await banner.CopyToAsync(fileStream);
                     }
 
-                    //flock.BannerLink = databaseFileName; !!!!!!!!!!!!!!!!!!!!!!!!! trb pus atributul in baza de date!!!!!!!!!!!!!!!!!!!!
+                    flock.BannerLink = databaseFileName;
                 }
 
                 // Update flock with file paths if files were uploaded
@@ -206,7 +212,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            //echo.Content = reqEcho.Content; - nu sunt sigur ce sa punem aici, probabil ca vor fi 
+            flock.Name = reqFlock.Name;
+            flock.Description = reqFlock.Description;
 
             // Active after pressing delete and no new files
             if (removePfp && !string.IsNullOrEmpty(flock.PfpLink))
@@ -215,13 +222,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 flock.PfpLink = null;
             }
 
-            /* -- ADD BANNER TO FLOCK DETAILS
-            if (removeBanner && !string.IsNullOrEmpty(flock.Banner))
+            //  -- ADD BANNER TO FLOCK DETAILS
+            if (removeBanner && !string.IsNullOrEmpty(flock.BannerLink))
             {
-                DeletePhysicalFile(flock.Banner);
-                flock.Banner = null;
+                DeletePhysicalFile(flock.BannerLink);
+                flock.BannerLink = null;
             }
-            */
+        
 
             if (pfp != null && pfp.Length > 0)
             {
@@ -229,7 +236,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif) or NOT AT ALL a video (mp4, mov).");
+                    ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif).");
                     return View(flock);
                 }
             }
@@ -240,7 +247,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif) or a....huh?...where did the text go?");
+                    ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif)");
                     return View(flock);
                 }
             }
@@ -276,12 +283,11 @@ namespace BAtwitter_DAW_2526.Controllers
                     banner.CopyTo(fileStream);
                 }
 
-                //flock.Banner = databaseFileName; - ADD BANNER TO FLOCK
+                flock.BannerLink = databaseFileName; // - ADD BANNER TO FLOCK
             }
 
             if (TryValidateModel(flock))
             {
-                //flock.DateEdited = DateTime.Now; - maybe not necessary to include
                 db.SaveChanges();
 
                 TempData["flock-message"] = "Flock was modified succesfully!";

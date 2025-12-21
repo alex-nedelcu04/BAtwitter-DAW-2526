@@ -1,0 +1,104 @@
+﻿@model BAtwitter_DAW_2526.Models.Flock
+
+@{
+    // Cel mai recen echo din flock
+    var mostRecentEcho = Model.Echos?
+        .Where(e => !e.IsRemoved && e.CommParentId == null && e.AmpParentId == null)
+        .OrderByDescending(e => e.DateCreated)
+        .FirstOrDefault();
+
+    // Username-ul adminului
+    var adminUsername = Model.Admin?.ApplicationUser?.UserName;
+    var adminDisplayName = Model.Admin?.DisplayName;
+}
+
+<div class="card shadow-sm mb-4 flock-card"
+     data-flock-url="@Url.Action("Show", "Flocks", new { id = Model.Id })"
+     style="cursor: pointer;">
+    
+    <!-- BANNER -->
+    @if (!string.IsNullOrEmpty(Model.BannerLink))
+    {
+        <div class="banner-container" style="width: 100%; height: 200px; overflow: hidden; background-color: #e0e0e0;">
+            <a href="@Model.BannerLink" class="d-block w-100 h-100" onclick="event.stopPropagation();">
+                <img src="@Model.BannerLink" alt="Flock Banner" 
+                     style="width: 100%; height: 100%; object-fit: cover;" />
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="banner-container" style="width: 100%; height: 200px; background-color: #e0e0e0;"></div>
+    }
+
+    <div class="card-body">
+        
+        <!-- PROFILE PICTURE AND NAME -->
+        <div class="d-flex align-items-center justify-content-between mb-3" style="margin-top: -60px; position: relative; z-index: 1;">
+            <div class="d-flex align-items-center">
+                @if (!string.IsNullOrEmpty(Model.PfpLink))
+                {
+                    <a href="@Model.PfpLink" onclick="event.stopPropagation();">
+                        <img src="@Model.PfpLink" alt="Flock Profile Picture" 
+                             class="rounded-circle border border-4 border-white"
+                             style="width: 120px; height: 120px; object-fit: cover; background-color: white;" />
+                    </a>
+                }
+                else
+                {
+                    <div class="rounded-circle border border-4 border-white bg-secondary" 
+                         style="width: 120px; height: 120px; background-color: white;"></div>
+                }
+                
+                <div class="ms-3 mt-5">
+                    <h4 class="fw-bold mb-0">@Model.Name</h4>
+                </div>
+            </div>
+
+            <div class="small text-muted text-end mt-5">
+                <p class="mb-1">created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")</p>
+                @if (!string.IsNullOrEmpty(adminUsername))
+                {
+                    <p class="mb-0">admin: @("@" + adminUsername)</p>
+                }
+            </div>
+
+
+        </div>
+
+        <!-- DESCRIPTION -->
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="mb-3 mt-2">
+                <p class="text-muted mb-0">@Model.Description</p>
+            </div>
+        }
+
+        <!-- MODIFY AND DELETE BUTTONS -->
+        @if (Model.AdminId == ViewBag.CurrentUser)
+        {
+            <div class="d-flex flex-row justify-content-between mb-3 mt-3">
+                <a class="btn btn-success" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Flock</a>
+                <form method="post" asp-controller="Flocks" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <button class="btn btn-danger" type="submit">Delete Flock</button>
+                </form>
+            </div>
+        }
+
+        <!-- MOST RECENT POST -->
+        @if (mostRecentEcho != null)
+        {
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="text-muted mb-3">Most Recent Post:</h6>
+                <partial name="EchoInfo" model="mostRecentEcho" />
+            </div>
+        }
+        else
+        {
+            <div class="mt-4 pt-3 border-top">
+                <p class="text-muted mb-0">No posts yet.</p>
+            </div>
+        }
+
+    </div>
+</div>

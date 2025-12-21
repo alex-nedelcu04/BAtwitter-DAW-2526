@@ -189,7 +189,11 @@ namespace BAtwitter_DAW_2526.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("DateCreated")
+                    b.Property<string>("BannerLink")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
@@ -291,6 +295,10 @@ namespace BAtwitter_DAW_2526.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("AccountStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BannerLink")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

@@ -64,7 +64,7 @@ namespace BAtwitter_DAW_2526.Models
 
                     Id = "8e445865-a24d-4543-a6c6-9443d048cdb0",
                     // primary key
-                    UserName = "admin@test.com",
+                    UserName = "admin_test",
                     EmailConfirmed = true,
                     NormalizedEmail = "ADMIN@TEST.COM",
                     Email = "admin@test.com",
@@ -79,7 +79,7 @@ namespace BAtwitter_DAW_2526.Models
 
                     Id = "8e445865-a24d-4543-a6c6-9443d048cdb1",
                     // primary key
-                    UserName = "editor@test.com",
+                    UserName = "editor_test",
                     EmailConfirmed = true,
                     NormalizedEmail = "EDITOR@TEST.COM",
                     Email = "editor@test.com",
@@ -95,7 +95,7 @@ namespace BAtwitter_DAW_2526.Models
 
                     Id = "8e445865-a24d-4543-a6c6-9443d048cdb2",
                     // primary key
-                    UserName = "user@test.com",
+                    UserName = "user_test",
                     EmailConfirmed = true,
                     NormalizedEmail = "USER@TEST.COM",
                     Email = "user@test.com",
@@ -143,7 +143,8 @@ namespace BAtwitter_DAW_2526.Models
                     {
                         Id = "8e445865-a24d-4543-a6c6-9443d048cdb0", // ApplicationUserId
                         DisplayName = "Admin User",
-                        PfpLink = "/Resources/Images/default.jpg",
+                        //PfpLink = "/Resources/Images/user_default_pfp.jpg",
+                        //BannerLink = "/Resources/Images/banner-default.jpg",
                         JoinDate = DateTime.Now,
                         AccountStatus = "active"
                     },
@@ -151,7 +152,8 @@ namespace BAtwitter_DAW_2526.Models
                     {
                         Id = "8e445865-a24d-4543-a6c6-9443d048cdb1", // ApplicationUserId
                         DisplayName = "Editor User",
-                        PfpLink = "/Resources/Images/default.jpg",
+                        //PfpLink = "/Resources/Images/user_default_pfp.jpg",
+                        //BannerLink = "/Resources/Images/banner-default.jpg",
                         JoinDate = DateTime.Now,
                         AccountStatus = "active"
                     },
@@ -159,7 +161,8 @@ namespace BAtwitter_DAW_2526.Models
                     {
                         Id = "8e445865-a24d-4543-a6c6-9443d048cdb2", // ApplicationUserId
                         DisplayName = "Regular User",
-                        PfpLink = "/Resources/Images/default.jpg",
+                        //PfpLink = "/Resources/Images/user_default_pfp.jpg",
+                        //BannerLink = "/Resources/Images/banner-default.jpg",
                         JoinDate = DateTime.Now,
                         AccountStatus = "active"
                     }

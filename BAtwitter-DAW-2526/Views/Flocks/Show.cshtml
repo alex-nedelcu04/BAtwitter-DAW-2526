@@ -1,0 +1,19 @@
+﻿@model BAtwitter_DAW_2526.Models.Flock
+
+
+@if (ViewBag.Message != null)
+{
+
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<br />
+
+
+
+<partial name="FlockInfo" model="Model" />
+
+@foreach (var echo in ViewBag.FlockEchoes)
+{
+    <partial name="EchoInfo" model="echo" />
+}

@@ -32,6 +32,7 @@ namespace BAtwitter_DAW_2526.Controllers
         {
             var echoes = db.Echoes
                             .Include(ech => ech.User)
+                                .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .OrderByDescending(ech => ech.DateCreated);
@@ -60,8 +61,11 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.Comments)
                                 .ThenInclude(comm => comm.User)
+                                    .ThenInclude(u => u.ApplicationUser)
+                            .Include(ech => ech.Comments)
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
+                                .ThenInclude(u => u.ApplicationUser)
                             .Where(ech => ech.Id == id)
                             .FirstOrDefault();
 
@@ -116,8 +120,15 @@ namespace BAtwitter_DAW_2526.Controllers
 
         public IActionResult New()
         {
-
             Echo echo = new();
+
+            // Load all flocks for dropdown
+            var flocks = db.Flocks
+                .Where(f => f.FlockStatus == "active")
+                .OrderBy(f => f.Name)
+                .ToList();
+
+            ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
 
             return View(echo);
         }
