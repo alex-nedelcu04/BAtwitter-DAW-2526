@@ -9,11 +9,11 @@
 }
 
 
+    <partial name="EchoInfo" model="Model" />
 
-<partial name="EchoInfo" model="Model" />
 
-<br />
-<br />
+
+
 
 @* Afisare comentarii recursive - afisate exact ca postarile *@
 
@@ -68,23 +68,3 @@
 
 </div>
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.comment-card').forEach(function (card) {
-                card.addEventListener('click', function (e) {
-
-                    // se duce pe link doar daca este apasata postarea
-                    if (e.target.closest('a, button')) {
-                        return;
-                    }
-
-                    const url = card.getAttribute('data-comment-url');
-                    if (url) {
-                        window.location.href = url;
-                    }
-                });
-            });
-        });
-    </script>
-}

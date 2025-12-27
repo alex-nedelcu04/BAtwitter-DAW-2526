@@ -32,6 +32,15 @@
                                 @("@" + Model.User.ApplicationUser.UserName)
                             </small>
                         }
+                        @if (Model.Flock != null)
+                        {
+                            <small class="text-primary fw-semibold">
+                                <a href="@Url.Action("Show", "Flocks", new { id = Model.Flock.Id })" class="text-primary text-decoration-none fw-semibold">
+                                    @Model.Flock.Name
+                                </a>
+                            </small>
+                        }
+
                     </div>
                 </div>
 

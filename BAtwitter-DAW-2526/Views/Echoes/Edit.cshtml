@@ -257,22 +257,34 @@
         }
 
         // Butoanele X pentru atașamentele existente (de pe server)
-        document.querySelectorAll('.btn-remove-existing').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const flagId = btn.getAttribute('data-remove-flag-id');
-                const flagInput = document.getElementById(flagId);
-                if (flagInput) {
-                    flagInput.value = 'true';
-                }
+        const removeAtt1Btn = document.getElementById('removeAtt1Btn');
+        const removeAtt2Btn = document.getElementById('removeAtt2Btn');
 
-                const card = btn.closest('[data-slot]');
+        if (removeAtt1Btn) {
+            removeAtt1Btn.addEventListener('click', () => {
+                if (removeFlags[0]) {
+                    removeFlags[0].value = 'true';
+                }
+                const card = removeAtt1Btn.closest('[data-slot]');
                 if (card) {
                     card.remove();
                 }
-
                 updateAddButtonState();
             });
-        });
+        }
+
+        if (removeAtt2Btn) {
+            removeAtt2Btn.addEventListener('click', () => {
+                if (removeFlags[1]) {
+                    removeFlags[1].value = 'true';
+                }
+                const card = removeAtt2Btn.closest('[data-slot]');
+                if (card) {
+                    card.remove();
+                }
+                updateAddButtonState();
+            });
+        }
 
         function updateAddButtonState() {
             const usedInputs = fileInputs.filter(i => i && i.files && i.files.length > 0).length;

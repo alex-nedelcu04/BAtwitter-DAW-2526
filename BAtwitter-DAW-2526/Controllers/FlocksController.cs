@@ -1,5 +1,4 @@
-﻿using AspNetCoreGeneratedDocument;
-using BAtwitter_DAW_2526.Data;
+﻿using BAtwitter_DAW_2526.Data;
 using BAtwitter_DAW_2526.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -364,7 +363,7 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
-                            .Where(e => e.FlockId == id)
+                            .Where(e => e.FlockId == id && e.CommParent == null)
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
