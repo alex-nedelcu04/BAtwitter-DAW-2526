@@ -7,46 +7,5 @@
 
 @foreach (var flock in ViewBag.Flocks)
 {
-
-    <div class="card shadow-sm mb-4 flock-card"
-     data-flock-url="@Url.Action("Show", "Flocks", new { id = flock.Id })"
-     style="cursor: pointer;">
-
     <partial name="FlockInfo" model="flock" />
-    <!-- MOST RECENT POST -->
-    @if (ViewBag.EchoMap[flock.Id] != null)
-    {
-
-        <div class="mt-4 pt-3 border-top">
-            <h6 class="text-muted mb-3">Most Recent Post:</h6>
-            <partial name="EchoInfo" model="ViewBag.EchoMap[flock.Id]" />
-        </div>
-    }
-    else
-    {
-        <div class="mt-4 pt-3 border-top">
-            <p class="text-muted mb-0">No posts yet.</p>
-        </div>
-    }
-    </div>
-}
-
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.flock-card').forEach(function (card) {
-                card.addEventListener('click', function (e) {
-                    // Navigate only if clicking on the card itself, not on links or buttons
-                    if (e.target.closest('a, button, video')) {
-                        return;
-                    }
-
-                    const url = card.getAttribute('data-flock-url');
-                    if (url) {
-                        window.location.href = url;
-                    }
-                });
-            });
-        });
-    </script>
 }

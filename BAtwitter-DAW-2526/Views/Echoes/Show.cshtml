@@ -8,26 +8,9 @@
     <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
 }
 
-<div class="card">
 
-    <partial name="EchoInfo" model="Model" />
 
-    @if (Model.UserId == ViewBag.CurrentUser)
-    {
-        <div class="d-flex flex-row justify-content-between">
-
-            <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id">Modify Echo</a>
-
-            <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id">
-
-                <button class="btn btn-danger" type="submit">Delete Echo</button>
-
-            </form>
-
-        </div>
-    }
-
-</div>
+<partial name="EchoInfo" model="Model" />
 
 <br />
 <br />
