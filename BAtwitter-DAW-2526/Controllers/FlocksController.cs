@@ -36,7 +36,7 @@ namespace BAtwitter_DAW_2526.Controllers
         // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
         public IActionResult Index()
         {
-            SortedDictionary<int, Echo?> echoes = [];
+            Dictionary<int, Echo?> echoes = [];
             var flocks = db.Flocks
                 .Include(f => f.Admin)
                     .ThenInclude(a => a.ApplicationUser)
@@ -49,7 +49,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 Echo? ech = db.Echoes
                                 .Include(e => e.Flock)
-                                .Where(e => e.FlockId == fl.Id)
+                                .Where(e => e.FlockId == fl.Id && !e.IsRemoved && e.CommParentId == null)
                                 .OrderByDescending(e => e.DateCreated)
                                 .FirstOrDefault();
 
@@ -121,11 +121,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
+                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -137,11 +137,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (banner != null && banner.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, banner.FileName);
-                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
+                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -255,11 +255,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -272,11 +272,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
+                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -346,9 +346,12 @@ namespace BAtwitter_DAW_2526.Controllers
         // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
         public IActionResult Show(int id)
         {
-            Flock? flock = db.Flocks
-                            .Where(f => f.Id == id)
-                            .FirstOrDefault();
+            var flock = db.Flocks
+                .Include(f => f.Admin)
+                    .ThenInclude(a => a.ApplicationUser)
+                .Where(f => f.Id == id)
+                .FirstOrDefault();
+
 
             if (flock is null)
             {
@@ -359,6 +362,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             var echoes = db.Echoes // am pus si Echoes ca mna afisam practic toate postarile din comunitate
                             .Include(ech => ech.User)
+                                .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
                             .Where(e => e.FlockId == id)
                             .OrderByDescending(ech => ech.DateCreated);

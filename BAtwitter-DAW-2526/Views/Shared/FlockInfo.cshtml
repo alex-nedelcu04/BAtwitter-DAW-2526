@@ -1,9 +1,10 @@
 ﻿@model BAtwitter_DAW_2526.Models.Flock
 
 @{
+    bool showRecent = Context.Request.Path.Value.Contains()
     // Cel mai recen echo din flock
     var mostRecentEcho = Model.Echos?
-        .Where(e => !e.IsRemoved && e.CommParentId == null && e.AmpParentId == null)
+        .Where(e => !e.IsRemoved && e.CommParentId == null)
         .OrderByDescending(e => e.DateCreated)
         .FirstOrDefault();
 
@@ -12,9 +13,6 @@
     var adminDisplayName = Model.Admin?.DisplayName;
 }
 
-<div class="card shadow-sm mb-4 flock-card"
-     data-flock-url="@Url.Action("Show", "Flocks", new { id = Model.Id })"
-     style="cursor: pointer;">
     
     <!-- BANNER -->
     @if (!string.IsNullOrEmpty(Model.BannerLink))
@@ -85,20 +83,5 @@
             </div>
         }
 
-        <!-- MOST RECENT POST -->
-        @if (mostRecentEcho != null)
-        {
-            <div class="mt-4 pt-3 border-top">
-                <h6 class="text-muted mb-3">Most Recent Post:</h6>
-                <partial name="EchoInfo" model="mostRecentEcho" />
-            </div>
-        }
-        else
-        {
-            <div class="mt-4 pt-3 border-top">
-                <p class="text-muted mb-0">No posts yet.</p>
-            </div>
-        }
 
     </div>
-</div>

@@ -10,8 +10,13 @@
 <br />
 
 
+<div class="card shadow-sm mb-4 flock-card"
+     data-flock-url="@Url.Action("Show", "Flocks", new { id = Model.Id })"
+     style="cursor: pointer;">
 
-<partial name="FlockInfo" model="Model" />
+<partial name="FlockInfo" model="@Model" />
+
+</div>
 
 @foreach (var echo in ViewBag.FlockEchoes)
 {

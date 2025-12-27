@@ -177,11 +177,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -193,11 +193,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -335,11 +335,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -352,11 +352,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
