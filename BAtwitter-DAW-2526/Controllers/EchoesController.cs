@@ -1,5 +1,4 @@
-﻿using AspNetCoreGeneratedDocument;
-using BAtwitter_DAW_2526.Data;
+﻿using BAtwitter_DAW_2526.Data;
 using BAtwitter_DAW_2526.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
