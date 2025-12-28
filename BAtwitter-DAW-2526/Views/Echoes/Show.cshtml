@@ -23,16 +23,28 @@
 <!-- Aici vom insera recursia pt. parintii postarii -->
 @if (ViewBag.Parents != null && ((List<Echo>)ViewBag.Parents).Any())
 {
-    <button class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover" type="button" data-bs-toggle="collapse"
-            data-bs-target=".collapseParents" aria-expanded="false" aria-controls="collapseParents">
-        Show Echo Parents
-    </button>
-    <div class="collapse collapseParents" style="border-left: 2px solid #ddd"> @* class="me-4" *@
-        @foreach (var parent in ViewBag.Parents)
-        {
-            <partial name="EchoParent" model="parent" />
-        }
-    </div>
+    if (((List<Echo>)ViewBag.Parents).Count() > 3)
+    {
+        <a class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+           data-bs-toggle="collapse" data-bs-target=".collapseParents" aria-expanded="false" aria-controls="collapseParents" style="user-select: none">
+            Show Echo Parents
+        </a>
+        <div class="collapse collapseParents" style="border-left: 2px solid #ddd"> @* class="me-4" *@
+            @foreach (var parent in ViewBag.Parents)
+            {
+                <partial name="EchoParent" model="parent" />
+            }
+        </div>
+    }
+    else
+    {
+        <div style="border-left: 2px solid #ddd">
+            @foreach (var parent in ViewBag.Parents)
+            {
+                <partial name="EchoParent" model="parent" />
+            }
+        </div>
+    }
 }
 
 <div id="here">
@@ -55,7 +67,7 @@
 @if (!Model.IsRemoved)
 {
     @* Afisarea formularului in care se poate adauga un comentariu *@
-    <div class="container">
+    <div class="container mt-4">
         <div class="row">
             <div class="col-md-2"></div>
 
