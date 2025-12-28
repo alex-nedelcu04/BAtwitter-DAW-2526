@@ -31,6 +31,7 @@ namespace BAtwitter_DAW_2526.Controllers
         public IActionResult Index()
         {
             var echoes = db.Echoes
+                            .Where(ech => !ech.IsRemoved) // Filtreaza echo-urile sterse
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
@@ -66,7 +67,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
-                            .Where(ech => ech.Id == id)
+                            .Where(ech => ech.Id == id && !ech.IsRemoved) // Filtreaza echo-urile sterse
                             .FirstOrDefault();
 
             if (echo is null)
@@ -260,6 +261,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            if (echo.IsRemoved)
+            {
+                TempData["message"] = "Cannot edit a deleted echo!";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
             if (echo.UserId == _userManager.GetUserId(User))
             {
                 return View(echo);
@@ -283,6 +291,13 @@ namespace BAtwitter_DAW_2526.Controllers
             if (echo is null)
             {
                 TempData["message"] = "Echo does not exist!";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            if (echo.IsRemoved)
+            {
+                TempData["message"] = "Cannot edit a deleted echo!";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
@@ -381,10 +396,11 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
 
-        // Se sterge un articol din baza de date
+        // Se sterge un articol din baza de date (soft delete - IsRemoved = true)
         // Editorii sau Adminii pot sterge articole
         // Editor -> articolele lor
         // Admin  -> oricare articol din BD
+        // Soft delete pentru a pastra structura recursiva
         [HttpPost]
         //[Authorize(Roles = "Editor,Admin")]
         
@@ -399,9 +415,17 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            if (echo.IsRemoved)
+            {
+                TempData["message"] = "Echo was already deleted!";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
             if (echo.UserId == _userManager.GetUserId(User))
             {
-                db.Echoes.Remove(echo);
+                // Soft delete recursiv - marcheaza echo-ul si toate comentariile/reply-urile ca sterse
+                MarkEchoAndChildrenAsRemoved(echo);
 
                 try
                 {
@@ -437,7 +461,9 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            Echo? parentEcho = db.Echoes.Find(echoId);
+            Echo? parentEcho = db.Echoes
+                .Where(e => e.Id == echoId && !e.IsRemoved) // Filtreaza echo-urile sterse
+                .FirstOrDefault();
 
             if (parentEcho is null)
             {
@@ -505,7 +531,7 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.User)
-                            .Where(ech => ech.CommParentId == echo.Id)
+                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved) // Filtreaza comentariile sterse
                             .ToList();
             echo.Comments = comments;
 
@@ -515,13 +541,31 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
+        // Stergere echo si comentarii recursiv
+        private void MarkEchoAndChildrenAsRemoved(Echo echo)
+        {
+       
+            echo.IsRemoved = true;
+
+            var comments = db.Echoes
+                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
+                            .ToList();
+
+            foreach (var comment in comments)
+            {
+                MarkEchoAndChildrenAsRemoved(comment);
+            }
+        }
+
         // highest ancestor
         private int GetOriginalEchoId(Echo echo)
         {
             Echo? current = echo;
             while (current.CommParentId != null)
             {
-                current = db.Echoes.Find(current.CommParentId);
+                current = db.Echoes
+                    .Where(e => e.Id == current.CommParentId && !e.IsRemoved) // Filtreaza echo-urile sterse
+                    .FirstOrDefault();
                 if (current == null) 
                     break;
             }

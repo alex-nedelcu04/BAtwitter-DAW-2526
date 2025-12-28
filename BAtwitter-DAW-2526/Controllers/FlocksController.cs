@@ -315,6 +315,20 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
+                // Sterge recursiv toate echo-urile principale din flock si comentariile lor
+                // (comentariile vor fi sterse recursiv, chiar daca au FlockId setat)
+                var flockEchoes = db.Echoes
+                    .Where(e => e.FlockId == id && !e.IsRemoved && e.CommParentId == null)
+                    .ToList();
+
+                foreach (var echo in flockEchoes)
+                {
+                    MarkEchoAndChildrenAsRemoved(echo);
+                }
+                
+                db.SaveChanges();
+
+
                 db.Flocks.Remove(flock);
 
                 try
@@ -363,7 +377,7 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
-                            .Where(e => e.FlockId == id && e.CommParent == null)
+                            .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
@@ -391,6 +405,22 @@ namespace BAtwitter_DAW_2526.Controllers
             if (System.IO.File.Exists(physicalPath))
             {
                 System.IO.File.Delete(physicalPath);
+            }
+        }
+
+        // Stergere echo si comentarii recursiv
+        private void MarkEchoAndChildrenAsRemoved(Echo echo)
+        {
+            echo.IsRemoved = true;
+            echo.FlockId = null; // elimina FK-ul catre flock
+
+            var comments = db.Echoes
+                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
+                            .ToList();
+
+            foreach (var comment in comments)
+            {
+                MarkEchoAndChildrenAsRemoved(comment);
             }
         }
     }
