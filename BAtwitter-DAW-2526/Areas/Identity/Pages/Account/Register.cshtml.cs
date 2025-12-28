@@ -143,6 +143,16 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
 
             // Ensure defaults are present so the view can render previews.
             Input ??= new InputModel();
+            
+            // Always ensure defaults are set if empty
+            if (string.IsNullOrWhiteSpace(Input.PfpLink))
+            {
+                Input.PfpLink = DefaultPfp;
+            }
+            if (string.IsNullOrWhiteSpace(Input.BannerLink))
+            {
+                Input.BannerLink = DefaultBanner;
+            }
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
@@ -156,6 +166,21 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
 
             var pfpFile = Request.Form.Files["pfp"];
             var bannerFile = Request.Form.Files["banner"];
+
+            // Ensure defaults are set before validation to prevent Required validation errors
+            Input ??= new InputModel();
+            if (string.IsNullOrWhiteSpace(Input.PfpLink))
+            {
+                Input.PfpLink = DefaultPfp;
+                // Clear any validation errors for this field since we've set a default
+                ModelState.Remove("Input.PfpLink");
+            }
+            if (string.IsNullOrWhiteSpace(Input.BannerLink))
+            {
+                Input.BannerLink = DefaultBanner;
+                // Clear any validation errors for this field since we've set a default
+                ModelState.Remove("Input.BannerLink");
+            }
 
             if (!ModelState.IsValid)
             {

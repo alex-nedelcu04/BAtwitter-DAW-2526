@@ -51,6 +51,7 @@
         </div>
 
         <input id="pfp" name="pfp" type="file" class="d-none" accept="image/*" />
+        <input type="hidden" asp-for="Input.PfpLink" id="pfpLinkHidden" />
 
         <!-- Preview for Profile Picture -->
         <div id="pfpPreviewContainer" class="mb-4"></div>
@@ -68,6 +69,7 @@
         </div>
 
         <input id="banner" name="banner" type="file" class="d-none" accept="image/*" />
+        <input type="hidden" asp-for="Input.BannerLink" id="bannerLinkHidden" />
 
         <!-- Preview for Banner -->
         <div id="bannerPreviewContainer" class="mb-4"></div>
@@ -102,6 +104,7 @@
         const pfpInput = document.getElementById('pfp');
         const pfpPreviewContainer = document.getElementById('pfpPreviewContainer');
         const addPfpBtn = document.getElementById('addPfpBtn');
+        const pfpLinkHidden = document.getElementById('pfpLinkHidden');
 
         addPfpBtn.addEventListener('click', () => {
             pfpInput.click();
@@ -112,6 +115,10 @@
         function handlePfpChange() {
             // Clear existing preview
             pfpPreviewContainer.innerHTML = '';
+            // Clear hidden field when new file is selected
+            if (pfpLinkHidden) {
+                pfpLinkHidden.value = '';
+            }
 
             if (!pfpInput.files || pfpInput.files.length === 0) {
                 return;
@@ -133,6 +140,7 @@
             removeBtn.style.zIndex = '10';
             removeBtn.addEventListener('click', () => {
                 pfpInput.value = '';
+                pfpLinkHidden.value = '';
                 previewCard.remove();
             });
 
@@ -149,10 +157,49 @@
             pfpPreviewContainer.appendChild(previewCard);
         }
 
+        // Restore preview from temp file on page load
+        function restorePfpPreview() {
+            const tempPath = pfpLinkHidden?.value;
+            if (tempPath && tempPath.startsWith('/Resources/TempUploads/')) {
+                const previewCard = document.createElement('div');
+                previewCard.className = 'position-relative border rounded-3 p-2';
+                previewCard.style.width = '200px';
+                previewCard.style.height = '200px';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.className = 'btn btn-sm btn-light position-absolute';
+                removeBtn.style.top = '8px';
+                removeBtn.style.right = '8px';
+                removeBtn.style.zIndex = '10';
+                removeBtn.addEventListener('click', () => {
+                    pfpInput.value = '';
+                    pfpLinkHidden.value = '';
+                    previewCard.remove();
+                });
+
+                const img = document.createElement('img');
+                img.src = tempPath;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.classList.add('rounded-circle');
+
+                previewCard.appendChild(removeBtn);
+                previewCard.appendChild(img);
+                pfpPreviewContainer.appendChild(previewCard);
+            }
+        }
+
+        // Restore preview on page load
+        document.addEventListener('DOMContentLoaded', restorePfpPreview);
+
         // Banner Preview
         const bannerInput = document.getElementById('banner');
         const bannerPreviewContainer = document.getElementById('bannerPreviewContainer');
         const addBannerBtn = document.getElementById('addBannerBtn');
+        const bannerLinkHidden = document.getElementById('bannerLinkHidden');
 
         addBannerBtn.addEventListener('click', () => {
             bannerInput.click();
@@ -163,6 +210,10 @@
         function handleBannerChange() {
             // Clear existing preview
             bannerPreviewContainer.innerHTML = '';
+            // Clear hidden field when new file is selected
+            if (bannerLinkHidden) {
+                bannerLinkHidden.value = '';
+            }
 
             if (!bannerInput.files || bannerInput.files.length === 0) {
                 return;
@@ -185,6 +236,7 @@
             removeBtn.style.zIndex = '10';
             removeBtn.addEventListener('click', () => {
                 bannerInput.value = '';
+                bannerLinkHidden.value = '';
                 previewCard.remove();
             });
 
@@ -200,5 +252,44 @@
             previewCard.appendChild(img);
             bannerPreviewContainer.appendChild(previewCard);
         }
+
+        // Restore preview from temp file on page load
+        function restoreBannerPreview() {
+            const tempPath = bannerLinkHidden?.value;
+            if (tempPath && tempPath.startsWith('/Resources/TempUploads/')) {
+                const previewCard = document.createElement('div');
+                previewCard.className = 'position-relative border rounded-3 p-1';
+                previewCard.style.width = '100%';
+                previewCard.style.height = '200px';
+                previewCard.style.maxWidth = '600px';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.className = 'btn btn-sm btn-light position-absolute';
+                removeBtn.style.top = '8px';
+                removeBtn.style.right = '8px';
+                removeBtn.style.zIndex = '10';
+                removeBtn.addEventListener('click', () => {
+                    bannerInput.value = '';
+                    bannerLinkHidden.value = '';
+                    previewCard.remove();
+                });
+
+                const img = document.createElement('img');
+                img.src = tempPath;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.classList.add('rounded-2');
+
+                previewCard.appendChild(removeBtn);
+                previewCard.appendChild(img);
+                bannerPreviewContainer.appendChild(previewCard);
+            }
+        }
+
+        // Restore preview on page load
+        document.addEventListener('DOMContentLoaded', restoreBannerPreview);
     </script>
 }
