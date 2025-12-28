@@ -99,6 +99,15 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            // Columns for equivalence with user profile
+            [Required(ErrorMessage = "The user will have a tag \uD83D")]
+            public string Tag { get; set; } = "";
+
+            [Required(ErrorMessage = "The user will have a profile picture \uD83D (default if not selected)")]
+            public string PfpLink { get; set; } = "/Resources/Images/user_default_pfp.jpg";
+            [Required(ErrorMessage = "The user will have a banner \uD83D (default if not selected)")]
+            public string BannerLink { get; set; } = "/Resources/Images/banner_default.jpg";
         }
 
 

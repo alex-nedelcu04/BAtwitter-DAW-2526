@@ -49,7 +49,7 @@
                     <small class="text-muted mt-1 d-block" style="font-size: 12px !important; font-style: oblique !important">
                         Accepted formats: jpg, jpeg, png, webp.
                     </small>
-                    <span class="text-danger d-block" id="bannerError"></span>
+                    <span asp-validation-for="BannerLink" class="text-danger d-block"></span>
                 </div>
 
                 <input id="banner" name="banner" type="file" class="d-none" accept="image/*" />
