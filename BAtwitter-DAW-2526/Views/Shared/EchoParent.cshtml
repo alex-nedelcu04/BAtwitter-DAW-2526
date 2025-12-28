@@ -1,20 +1,6 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 @using System.IO
 
-@functions {
-    bool AnyNonRemoved(ICollection<Echo> echs)
-    {
-        foreach (var ech in echs)
-        {
-            if (!ech.IsRemoved)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-}
-
 <div class="ms-4 mt-3">
     @if (Model.IsRemoved)
     {
@@ -24,7 +10,7 @@
     }
     else
     {
-        <div class="card shadow-sm mb-4 comment-card" data-comment-url="@(Url.Action("Show", "Echoes", new { id = Model.Id }) + "#here")">
+        <div class="card shadow-sm mb-4 comment-card" data-comment-url="@(Url.Action("Show", "Echoes", new { id = Model.Id })  + "#here")">
             <div class="card-body">
 
                 <!-- HEADER: avatar + nume + username + edited at -->
@@ -189,23 +175,8 @@
                         created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
                     </div>
                 </div>
+
             </div>
         </div>
     }
-
-    @* REPLIES (recursiv) *@
-    @if (Model.Comments != null && Model.Comments.Any())
-    {
-        <button class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover" type="button" data-bs-toggle="collapse"
-                data-bs-target="@(".collapseComments" + Model.Id)" aria-expanded="false" aria-controls="@("collapseComments" + Model.Id)">
-            Show Echo Comments
-        </button>
-        <div class="collapse @("collapseComments" + Model.Id)" style="border-left: 2px solid #ddd; margin-top: 10px;">
-            @foreach (var reply in Model.Comments.Where(c => (c.Comments != null && @AnyNonRemoved(c.Comments) && c.IsRemoved) || !c.IsRemoved).OrderBy(c => c.DateCreated))
-            {
-                <partial name="CommentRecursion" model="reply" />
-            }
-        </div>
-    }
-
 </div>

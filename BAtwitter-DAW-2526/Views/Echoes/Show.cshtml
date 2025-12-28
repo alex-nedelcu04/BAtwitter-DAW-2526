@@ -1,70 +1,84 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 
-<!-- Aici vom insera recursia pt. parintii postarii -->
+@functions {
+    bool AnyNonRemoved(ICollection<Echo> echs)
+    {
+        foreach (var ech in echs)
+        {
+            if (!ech.IsRemoved)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
 
 @* Echo + comments*@
-@if(ViewBag.Message != null)
+@if (ViewBag.Message != null)
 {
     <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
 }
 
+<!-- Aici vom insera recursia pt. parintii postarii -->
+@if (ViewBag.Parents != null && ((List<Echo>)ViewBag.Parents).Any())
+{
+    <button class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover" type="button" data-bs-toggle="collapse"
+            data-bs-target=".collapseParents" aria-expanded="false" aria-controls="collapseParents">
+        Show Echo Parents
+    </button>
+    <div class="collapse collapseParents" style="border-left: 2px solid #ddd"> @* class="me-4" *@
+        @foreach (var parent in ViewBag.Parents)
+        {
+            <partial name="EchoParent" model="parent" />
+        }
+    </div>
+}
 
+<div id="here">
     <partial name="EchoInfo" model="Model" />
-
-
-
-
+</div>
 
 @* Afisare comentarii recursive - afisate exact ca postarile *@
 
-@if (Model.Comments != null && Model.Comments.Any())
+@if (Model.Comments != null && @AnyNonRemoved(Model.Comments))
 {
-    <h5 class="mt-4 mb-3">Comments:</h5>
-    @foreach (var comm in Model.Comments.OrderBy(c => c.DateCreated))
-    {
-        <partial name="CommentRecursion" model="@comm" />
-    }
+    <h5 class="mt-3 mb-3">Comments:</h5>
+    <div style="border-left: 2px solid #ddd"> @* class="me-4" *@
+        @foreach (var comm in Model.Comments.Where(c => (c.Comments != null && @AnyNonRemoved(c.Comments) && c.IsRemoved) || !c.IsRemoved).OrderBy(c => c.DateCreated))
+        {
+            <partial name="CommentRecursion" model="@comm" />
+        }
+    </div>
 }
 
+@if (!Model.IsRemoved)
+{
+    @* Afisarea formularului in care se poate adauga un comentariu *@
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2"></div>
 
-@* Afisarea formularului in care se poate adauga un comentariu *@
+            <div class="col-md-8">
+                <div class="card">
+                    <form method="post" asp-controller="Echoes" asp-action="Show">
+                        <div class="card-body">
+                            <input type="hidden" name="EchoId" value="@Model.Id" />
 
-<div class="container">
+                            <label>Comment</label>
+                            <br />
 
-    <div class="row">
+                            <textarea class="form-control" name="Content"></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                            <br /><br />
 
-        <div class="col-md-2"></div>
-
-        <div class="col-md-8">
-
-            <div class="card">
-
-                <form method="post" asp-controller="Echoes" asp-action="Show">
-
-                    <div class="card-body">
-
-                        <input type="hidden" name="EchoId" value="@Model.Id" />
-
-                        <label>Comment</label>
-                        <br />
-
-                        <textarea class="form-control" name="Content"></textarea>
-                        <span asp-validation-for="Content" class="text-danger"></span>
-                        <br /><br/>
-
-                        <button class="btn btn-success" type="submit">Add Comment</button>
-
-                    </div>
-
-                </form>
-
+                            <button class="btn btn-success" type="submit">Add Comment</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
+            <div class="col-md-2"></div>
         </div>
-
-        <div class="col-md-2"></div>
-
     </div>
-
-</div>
-
+}

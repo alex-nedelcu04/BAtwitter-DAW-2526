@@ -67,7 +67,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
-                            .Where(ech => ech.Id == id && !ech.IsRemoved) // Filtreaza echo-urile sterse
+                            .Where(ech => ech.Id == id) // Filtreaza echo-urile sterse
                             .FirstOrDefault();
 
             if (echo is null)
@@ -78,26 +78,27 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             // get post parents
-
-            /*
-            ViewBag.Parents = new List<Echo>();
+            List<Echo> parents = [];
             Echo? curr = echo;
-            while (curr.CommParentId != null)
+            while (curr is not null && curr.CommParentId != null)
             {
                 Echo? parent = db.Echoes
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.User)
+                                .ThenInclude(u => u.ApplicationUser)
                             .Where(ech => ech.Id == curr.CommParentId)
                             .FirstOrDefault();
 
                 if (parent != null)
                 {
-                    ViewBag.Parents.Add(parent);
+                    parents.Add(parent);
                 }
                 curr = parent;
             }
-            */
+
+            parents.Reverse();
+            ViewBag.Parents = parents;
 
             LoadCommentsRecursively(echo);
 
@@ -177,11 +178,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -193,11 +194,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -349,11 +350,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -366,11 +367,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -424,8 +425,8 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (echo.UserId == _userManager.GetUserId(User))
             {
-                // Soft delete recursiv - marcheaza echo-ul si toate comentariile/reply-urile ca sterse
-                MarkEchoAndChildrenAsRemoved(echo);
+                // marcheaza echo-ul ca sters
+                echo.IsRemoved = true;
 
                 try
                 {
@@ -531,29 +532,13 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.User)
-                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved) // Filtreaza comentariile sterse
+                            .Where(ech => ech.CommParentId == echo.Id)
                             .ToList();
             echo.Comments = comments;
 
             foreach (var comment in comments)
             {
                 LoadCommentsRecursively(comment);
-            }
-        }
-
-        // Stergere echo si comentarii recursiv
-        private void MarkEchoAndChildrenAsRemoved(Echo echo)
-        {
-       
-            echo.IsRemoved = true;
-
-            var comments = db.Echoes
-                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
-                            .ToList();
-
-            foreach (var comment in comments)
-            {
-                MarkEchoAndChildrenAsRemoved(comment);
             }
         }
 
