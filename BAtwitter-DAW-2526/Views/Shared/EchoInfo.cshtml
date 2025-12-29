@@ -6,17 +6,28 @@
     bool showButtons = path.Contains("Echoes/Show");
 }
 
-
-<div class="card shadow-sm mb-4 mt-2 echo-card" data-echo-url="@(Url.Action("Show", "Echoes", new { id = Model.Id }) + "#here")">
+<div class="card shadow-sm mb-4  mt-2 echo-card"
+     data-echo-url="@Url.Action("Show", "Echoes", new { id = Model.Id })">
     <div class="card-body">
+
         <!-- HEADER: avatar + nume + username + edited at -->
         <div class="d-flex justify-content-between align-items-start">
 
             <div class="d-flex align-items-center">
                 @if (Model.User != null && !string.IsNullOrEmpty(Model.User.PfpLink))
                 {
-                    <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
-                            style="width: 48px; height: 48px; object-fit: cover;" />
+                    @if (Model.User?.ApplicationUser != null)
+                    {
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-decoration-none">
+                            <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                                 style="width: 48px; height: 48px; object-fit: cover;" />
+                        </a>
+                    }
+                    else
+                    {
+                        <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                             style="width: 48px; height: 48px; object-fit: cover;" />
+                    }
                 }
                 else
                 {
@@ -24,15 +35,20 @@
                 }
 
                 <div class="d-flex flex-column">
-                    <span class="fw-semibold">
-                        @(Model.User?.DisplayName ?? "Unknown user")
-                    </span>
-
                     @if (Model.User?.ApplicationUser != null)
                     {
-                        <small class="text-muted">
-                            @("@" + Model.User.ApplicationUser.UserName)
-                        </small>
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none text-dark">
+                            @(Model.User?.DisplayName ?? "Unknown user")
+                        </a>
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-muted text-decoration-none">
+                            <small>@("@" + Model.User.ApplicationUser.UserName)</small>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="fw-semibold">
+                            @(Model.User?.DisplayName ?? "Unknown user")
+                        </span>
                     }
 
                     @if (Model.Flock != null)
@@ -171,7 +187,7 @@
             </div>
         </div>
 
-        @if (Model.UserId == ViewBag.CurrentUser && showButtons && !Model.IsRemoved)
+        @if (Model.UserId == ViewBag.CurrentUser && showButtons)
         {
             <div class="d-flex flex-row justify-content-between mt-3">
                 <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
@@ -181,11 +197,5 @@
             </div>
         }
 
-        @if (Model.IsRemoved)
-        {
-            <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-                This Echo has been removed.
-            </small>
-        }
     </div>
 </div>

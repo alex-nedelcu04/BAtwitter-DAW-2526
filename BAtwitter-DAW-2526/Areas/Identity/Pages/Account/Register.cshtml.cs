@@ -319,13 +319,13 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
                     return defaultLink;
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userId);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userId);
                 Directory.CreateDirectory(directoryPath);
 
                 // Keep original name, but strip any path pieces.
                 var safeName = Path.GetFileName(uploadFile.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Ioan/Users/" + userId + "/" + safeName;
+                var databaseFileName = "/Resources/Alex/Users/" + userId + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -343,7 +343,7 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
 
                 if (System.IO.File.Exists(tempPath))
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userId);
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userId);
                     Directory.CreateDirectory(directoryPath);
 
                     var destName = Path.GetFileName(tempPath);
@@ -352,7 +352,7 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
                     System.IO.File.Copy(tempPath, destPath, overwrite: true);
                     try { System.IO.File.Delete(tempPath); } catch { /* best effort cleanup */ }
 
-                    return "/Resources/Ioan/Users/" + userId + "/" + destName;
+                    return "/Resources/Alex/Users/" + userId + "/" + destName;
                 }
             }
 

@@ -1,18 +1,42 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using BAtwitter_DAW_2526.Data
+@using Microsoft.EntityFrameworkCore
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
 
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @@@User.Identity?.Name!</a>
+    
+    var currentUserId = UserManager.GetUserId(User);
+    var currentUser = !string.IsNullOrEmpty(currentUserId) ? DbContext.Users.Find(currentUserId) : null;
+    var userProfile = currentUser != null ? DbContext.UserProfiles
+        .Include(up => up.ApplicationUser)
+        .FirstOrDefault(up => up.Id == currentUser.Id) : null;
+    var username = currentUser?.UserName ?? User.Identity?.Name;
+    var pfpLink = userProfile?.PfpLink ?? "/Resources/Images/user_default_pfp.jpg";
+    
+    <li class="nav-item d-flex align-items-center">
+        <a class="nav-link text-dark d-flex align-items-center text-decoration-none" 
+           asp-controller="UserProfiles" 
+           asp-action="Show" 
+           asp-route-username="@username" 
+           title="View Profile"
+           style="padding: 0.5rem 1rem;">
+            <img src="@pfpLink" 
+                 alt="Profile Picture" 
+                 class="rounded-circle me-2" 
+                 style="width: 32px; height: 32px; object-fit: cover;" />
+            <span>Hello @@@username!</span>
+        </a>
     </li>
     <li class="nav-item">
         <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
             <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
         </form>
     </li>
+
 }
 else
 {

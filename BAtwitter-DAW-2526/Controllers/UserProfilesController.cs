@@ -1,5 +1,7 @@
 ﻿using BAtwitter_DAW_2526.Data;
 using BAtwitter_DAW_2526.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,6 @@ namespace BAtwitter_DAW_2526.Controllers
 {
     public class UserProfilesController : Controller
     {
-
         private readonly ApplicationDbContext db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -22,217 +23,292 @@ namespace BAtwitter_DAW_2526.Controllers
             _env = env;
         }
 
-
-
+        // Index ar trb sa fie profilul utilizatorului curent (sau redirect la Show cu username-ul curent)
         // [HttpGet] care se executa implicit
         // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
         public IActionResult Index()
         {
-
-
-            Echo? ech = db.Echoes
-                            .Include(e => e.UserId)
-                            .Where(e => e.UserId == _userManager.GetUserId(User) && !e.IsRemoved && e.CommParentId == null)
-                            .OrderByDescending(e => e.DateCreated)
-                            .FirstOrDefault();
-
-            ViewBag.Echoes = ech;
-
-            if (TempData.ContainsKey("userprofile-message"))
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
             {
-                ViewBag.Message = TempData["userprofile-message"];
-                ViewBag.Type = TempData["userprofile-type"];
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
             }
 
-            return View();
+            var currentUser = db.Users.Find(currentUserId);
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            return RedirectToAction("Show", new { username = currentUser.UserName });
+        }
+
+        // New nu e necesar pentru UserProfile
+        // Dacă UserProfile nu există, redirect la Register
+        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        public IActionResult New()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Register", "Account", new { area = "Identity" });
+            }
+
+            // Verifica daca UserProfile exista deja
+            var existingProfile = db.UserProfiles.Find(currentUserId);
+            if (existingProfile != null)
+            {
+                var currentUser = db.Users.Find(currentUserId);
+                TempData["userprofile-message"] = "Your profile already exists!";
+                TempData["userprofile-type"] = "alert-info";
+                return RedirectToAction("Show", new { username = currentUser?.UserName });
+            }
+
+            // Daca nu exista => redirect la Register
+            return RedirectToAction("Register", "Account", new { area = "Identity" });
         }
 
        
-        // Edit va avea aceeasi chestie cu New la nivel de pagini etc. asa cum e si pt postari in sine
-        //[Authorize(Roles = "FlockAdmin")]
-        public IActionResult Edit(int id)
+        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        public IActionResult Edit(string id)
         {
-            UserProfile? userPf = db.UserProfiles.Where(f => f.Id == id).FirstOrDefault();
-
-            if (flock is null)
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
             {
-                TempData["flock-message"] = "Flock does not exist!";
-                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            UserProfile? userProfile = db.UserProfiles
+                .Include(up => up.ApplicationUser)
+                .Where(up => up.Id == id)
+                .FirstOrDefault();
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            if (flock.AdminId == _userManager.GetUserId(User))
+            if (userProfile.Id == currentUserId)
             {
-                return View(flock);
+                return View(userProfile);
             }
             else
             {
-                TempData["flock-message"] = "You are not authorized to change the details of this flock.";
-                TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                TempData["userprofile-message"] = "You are not authorized to change the details of this profile.";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Show", new { username = userProfile.ApplicationUser?.UserName });
             }
         }
 
         // POST pt Edit, kind of just copy pasted cu niste micute modificari ca o sa fie basically acelasi lucru at the end of the day
-        //[Authorize(Roles = "FlockAdmin")]
+        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
         [HttpPost]
-        public IActionResult Edit(int id, Flock reqFlock, IFormFile? pfp, IFormFile? banner, bool removePfp = false, bool removeBanner = false)
+        public async Task<IActionResult> Edit(string id, UserProfile reqUserProfile, IFormFile? pfp, IFormFile? banner, bool removePfp = false, bool removeBanner = false)
         {
-            Flock? flock = db.Flocks.Find(id);
-
-            if (flock is null)
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
             {
-                TempData["flock-message"] = "Flock does not exist!";
-                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            UserProfile? userProfile = db.UserProfiles.Find(id);
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            if (flock.AdminId != _userManager.GetUserId(User))
+            if (userProfile.Id != currentUserId)
             {
-                TempData["flock-message"] = "You are not authorized to change the details of this flock.";
-                TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
+                var applicationUser = db.Users.Find(userProfile.Id);
+                var username = applicationUser?.UserName;
+
+                TempData["userprofile-message"] = "You are not authorized to change the details of this profile.";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Show", new { username = username });
             }
 
-            flock.Name = reqFlock.Name;
-            flock.Description = reqFlock.Description;
+            userProfile.DisplayName = reqUserProfile.DisplayName;
+            userProfile.Description = reqUserProfile.Description;
+            userProfile.Pronouns = reqUserProfile.Pronouns;
 
             // Active after pressing delete and no new files
-            if (removePfp && !string.IsNullOrEmpty(flock.PfpLink))
+            if (removePfp && !string.IsNullOrEmpty(userProfile.PfpLink))
             {
-                DeletePhysicalFile(flock.PfpLink);
-                flock.PfpLink = null;
+                // Nu șterge default-ul
+                if (!userProfile.PfpLink.Contains("user_default_pfp"))
+                {
+                    DeletePhysicalFile(userProfile.PfpLink);
+                }
+                userProfile.PfpLink = "/Resources/Images/user_default_pfp.jpg";
             }
 
-            //  -- ADD BANNER TO FLOCK DETAILS
-            if (removeBanner && !string.IsNullOrEmpty(flock.BannerLink))
+            if (removeBanner && !string.IsNullOrEmpty(userProfile.BannerLink))
             {
-                DeletePhysicalFile(flock.BannerLink);
-                flock.BannerLink = null;
+                // Nu șterge default-ul
+                if (!userProfile.BannerLink.Contains("banner_default"))
+                {
+                    DeletePhysicalFile(userProfile.BannerLink);
+                }
+                userProfile.BannerLink = "/Resources/Images/banner_default.jpg";
             }
-
 
             if (pfp != null && pfp.Length > 0)
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" }; // ".gif", ".mp4", ".mov" - PROBABLY NOT
+                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif).");
-                    return View(flock);
+                    ModelState.AddModelError("PfpLink", "Profile picture must be an image (jpg, jpeg, png, webp).");
+                    return View(userProfile);
                 }
             }
 
             if (banner != null && banner.Length > 0)
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" }; // ".gif", ".mp4", ".mov" - macar sa punem gifuri? alea n-ar fi grele per se
+                var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif)");
-                    return View(flock);
+                    ModelState.AddModelError("BannerLink", "Banner must be an image (jpg, jpeg, png, webp)");
+                    return View(userProfile);
                 }
             }
-
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                // Șterge vechiul fișier dacă nu e default
+                if (!string.IsNullOrEmpty(userProfile.PfpLink) && !userProfile.PfpLink.Contains("user_default_pfp"))
+                {
+                    DeletePhysicalFile(userProfile.PfpLink);
+                }
+
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
-                var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var safeName = Path.GetFileName(pfp.FileName);
+                var storagePath = Path.Combine(directoryPath, safeName);
+                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
-                    pfp.CopyTo(fileStream);
+                    await pfp.CopyToAsync(fileStream);
                 }
 
-                flock.PfpLink = databaseFileName;
+                userProfile.PfpLink = databaseFileName;
             }
-
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                // Șterge vechiul fișier dacă nu e default
+                if (!string.IsNullOrEmpty(userProfile.BannerLink) && !userProfile.BannerLink.Contains("banner_default"))
+                {
+                    DeletePhysicalFile(userProfile.BannerLink);
+                }
+
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
-                var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
+                var safeName = Path.GetFileName(banner.FileName);
+                var storagePath = Path.Combine(directoryPath, safeName);
+                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
-                    banner.CopyTo(fileStream);
+                    await banner.CopyToAsync(fileStream);
                 }
 
-                flock.BannerLink = databaseFileName; // - ADD BANNER TO FLOCK
+                userProfile.BannerLink = databaseFileName;
             }
 
-            if (TryValidateModel(flock))
+            if (TryValidateModel(userProfile))
             {
-                db.SaveChanges();
+                await db.SaveChangesAsync();
 
-                TempData["flock-message"] = "Flock was modified succesfully!";
-                TempData["flock-type"] = "alert-info";
-                return RedirectToAction("Show", new { id = flock.Id });
+                // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
+                var applicationUser = db.Users.Find(userProfile.Id);
+                var username = applicationUser?.UserName;
+
+                TempData["userprofile-message"] = "Profile was modified successfully!";
+                TempData["userprofile-type"] = "alert-info";
+                return RedirectToAction("Show", new { username = username });
             }
             else
             {
-                return View(flock);
+                return View(userProfile);
             }
         }
 
-        // Delete e doar o metoda POST, nu are pagina routed
-        //[Authorize(Roles = "FlockAdmin")]
+        // Delete pentru UserProfile - probabil nu ar trebui să fie disponibil sau ar trebui să fie diferit
+        // Poate doar să marcheze contul ca "deleted" sau "suspended" în loc să șteargă efectiv
+        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
         [HttpPost]
-        public IActionResult Delete(int id)
+        public IActionResult Delete(string id)
         {
-            Flock? flock = db.Flocks.Find(id);
-
-            if (flock is null)
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
             {
-                TempData["flock-message"] = "Flock does not exist!";
-                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            UserProfile? userProfile = db.UserProfiles.Find(id);
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            if (flock.AdminId == _userManager.GetUserId(User))
+            if (userProfile.Id == currentUserId)
             {
-                // Sterge recursiv toate echo-urile principale din flock si comentariile lor
-                // (comentariile vor fi sterse recursiv, chiar daca au FlockId setat)
-                var flockEchoes = db.Echoes
-                    .Where(e => e.FlockId == id && !e.IsRemoved && e.CommParentId == null)
+                // Marchează contul ca șters în loc să-l ștergi efectiv
+                // Sau poți șterge UserProfile dacă e necesar, dar ApplicationUser va rămâne
+                userProfile.AccountStatus = "deleted";
+
+                // Marchează toate echo-urile utilizatorului ca șterse
+                var userEchoes = db.Echoes
+                    .Where(e => e.UserId == id && !e.IsRemoved && e.CommParentId == null)
                     .ToList();
 
-                foreach (var echo in flockEchoes)
+                foreach (var echo in userEchoes)
                 {
                     MarkEchoAndChildrenAsRemoved(echo);
                 }
 
-                db.SaveChanges();
-
-
-                db.Flocks.Remove(flock);
-
                 try
                 {
                     db.SaveChanges();
-                    TempData["flock-message"] = "Flock was deleted!";
-                    TempData["flock-type"] = "alert-info";
-                    return RedirectToAction("Index");
+
+                    TempData["userprofile-message"] = "Account was deleted!";
+                    TempData["userprofile-type"] = "alert-info";
+                    return RedirectToAction("Index", "Home");
                 }
                 catch (DbUpdateException)
                 {
-                    TempData["flock-message"] = "Flock could not be deleted...";
-                    TempData["flock-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
+                    var applicationUser = db.Users.Find(userProfile.Id);
+                    var username = applicationUser?.UserName;
+
+                    TempData["userprofile-message"] = "Account could not be deleted...";
+                    TempData["userprofile-type"] = "alert-danger";
+                    return RedirectToAction("Show", new { username = username });
                 }
             }
             else
             {
-                TempData["flock-message"] = "You are not authorized to delete this flock.";
-                TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
+                var applicationUser = db.Users.Find(userProfile.Id);
+                var username = applicationUser?.UserName;
+
+                TempData["userprofile-message"] = "You are not authorized to delete this profile.";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Show", new { username = username });
             }
         }
 
@@ -240,39 +316,56 @@ namespace BAtwitter_DAW_2526.Controllers
         // Show va fi ca o vizualizare a profilului unui user designwise
         // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
         // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
-        public IActionResult Show(int id)
+        [Route("UserProfiles/Show/{username}")]
+        public IActionResult Show(string username)
         {
-            var flock = db.Flocks
-                .Include(f => f.Admin)
-                    .ThenInclude(a => a.ApplicationUser)
-                .Where(f => f.Id == id)
-                .FirstOrDefault();
-
-
-            if (flock is null)
+            // If no username is provided, redirect to Index to get current user's profile
+            if (string.IsNullOrEmpty(username))
             {
-                TempData["flock-message"] = "Flock does not exist!";
-                TempData["flock-type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            var echoes = db.Echoes // am pus si Echoes ca mna afisam practic toate postarile din comunitate
+            // Find user by username first, then get their profile
+            var applicationUser = db.Users
+                .Where(u => u.UserName == username)
+                .FirstOrDefault();
+
+            if (applicationUser == null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            var userProfile = db.UserProfiles
+                .Include(up => up.ApplicationUser)
+                .Where(up => up.Id == applicationUser.Id)
+                .FirstOrDefault();
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            var echoes = db.Echoes
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
-                            .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
+                            .Where(e => e.UserId == userProfile.Id && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
-            ViewBag.FlockEchoes = echoes;
+            ViewBag.UserEchoes = echoes;
 
-            if (TempData.ContainsKey("flock-message"))
+            if (TempData.ContainsKey("userprofile-message"))
             {
-                ViewBag.Message = TempData["flock-message"];
-                ViewBag.Type = TempData["flock-type"];
+                ViewBag.Message = TempData["userprofile-message"];
+                ViewBag.Type = TempData["userprofile-type"];
             }
 
-            return View(flock);
+            return View(userProfile);
         }
 
 
@@ -295,7 +388,7 @@ namespace BAtwitter_DAW_2526.Controllers
         private void MarkEchoAndChildrenAsRemoved(Echo echo)
         {
             echo.IsRemoved = true;
-            echo.FlockId = null; // elimina FK-ul catre flock
+            // Nu elimin UserId pentru că echo-urile rămân asociate cu utilizatorul chiar dacă sunt marcate ca șterse
 
             var comments = db.Echoes
                             .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
@@ -306,6 +399,5 @@ namespace BAtwitter_DAW_2526.Controllers
                 MarkEchoAndChildrenAsRemoved(comment);
             }
         }
-    
     }
 }

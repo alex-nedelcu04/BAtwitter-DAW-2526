@@ -57,7 +57,7 @@ namespace BAtwitter_DAW_2526.Models
                             EmailConfirmed = true,
                             NormalizedEmail = "ADMIN@TEST.COM",
                             Email = "admin@test.com",
-                            NormalizedUserName = "ADMIN@TEST.COM",
+                            NormalizedUserName = "ADMIN_TEST",
                             PasswordHash = hasher.HashPassword(null, "Admin1!")
                         },
 
@@ -69,7 +69,7 @@ namespace BAtwitter_DAW_2526.Models
                             EmailConfirmed = true,
                             NormalizedEmail = "EDITOR@TEST.COM",
                             Email = "editor@test.com",
-                            NormalizedUserName = "EDITOR@TEST.COM",
+                            NormalizedUserName = "EDITOR_TEST",
                             PasswordHash = hasher.HashPassword(null, "Editor1!")
                         },
 
@@ -81,7 +81,7 @@ namespace BAtwitter_DAW_2526.Models
                             EmailConfirmed = true,
                             NormalizedEmail = "USER@TEST.COM",
                             Email = "user@test.com",
-                            NormalizedUserName = "USER@TEST.COM",
+                            NormalizedUserName = "USER_TEST",
                             PasswordHash = hasher.HashPassword(null, "User1!")
                         }
                     );
