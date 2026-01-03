@@ -198,12 +198,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.PfpLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(pfp.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -221,12 +221,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.BannerLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(banner.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {

@@ -75,6 +75,9 @@
 
             <div class="col-md-8">
                 <div class="card">
+                    <a class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover" asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id">Send Echo</a>
+                    
+                    <!--
                     <form method="post" asp-controller="Echoes" asp-action="Show">
                         <div class="card-body">
                             <input type="hidden" name="EchoId" value="@Model.Id" />
@@ -89,6 +92,7 @@
                             <button class="btn btn-success" type="submit">Add Comment</button>
                         </div>
                     </form>
+                    -->
                 </div>
             </div>
 

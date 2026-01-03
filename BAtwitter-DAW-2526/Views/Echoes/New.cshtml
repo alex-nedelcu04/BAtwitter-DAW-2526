@@ -10,13 +10,34 @@
                 
                 <div asp-validation-summary="All" class="text-danger"></div>
 
-                <div class="mb-3">
-                    <label asp-for="FlockId" class="form-label">Flock (Optional)</label>
-                    <select asp-for="FlockId" asp-items="ViewBag.Flocks" class="form-select">
-                        <option value="">-- Select a Flock (Optional) --</option>
-                    </select>
-                    <span asp-validation-for="FlockId" class="text-danger"></span>
-                </div>
+                @if (Model.CommParentId != null)
+                {
+                    <input type="hidden" asp-for="CommParentId" />
+                    @if (Model.FlockId != null)
+                    {
+                        <input type="hidden" asp-for="FlockId" />
+                    }
+                }
+
+                @if (Model.CommParentId == null)
+                {
+                    <div class="mb-3">
+                        <label asp-for="FlockId" class="form-label">Flock (Optional)</label>
+                        <select asp-for="FlockId" asp-items="ViewBag.Flocks" class="form-select">
+                            <option value="">-- Select a Flock (Optional) --</option>
+                        </select>
+                        <span asp-validation-for="FlockId" class="text-danger"></span>
+                    </div>
+                }
+                else
+                {
+                    @if (Model.FlockId != null)
+                    {
+                        <div class="mb-3 user-select-none">
+                            Flock: @ViewBag.Flock.Name
+                        </div>
+                    }
+                }
 
                 <div class="mb-3">
                     <label asp-for="Content" class="form-label">Content</label>

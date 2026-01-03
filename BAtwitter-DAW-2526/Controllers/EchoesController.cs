@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BAtwitter_DAW_2526.Controllers
 {
@@ -67,7 +68,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
-                            .Where(ech => ech.Id == id) // Filtreaza echo-urile sterse
+                            .Where(ech => ech.Id == id)
                             .FirstOrDefault();
 
             if (echo is null)
@@ -119,18 +120,33 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // [HttpGet] se executa implicit
         [Authorize(Roles = "User, Admin")]
-
-        public IActionResult New()
+        public IActionResult New(int? id)
         {
             Echo echo = new();
+            if (id != null)
+            {
+                Echo? parentEcho = db.Echoes.Where(e => e.Id == id).FirstOrDefault();
 
-            // Load all flocks for dropdown
-            var flocks = db.Flocks
-                .Where(f => f.FlockStatus == "active")
-                .OrderBy(f => f.Name)
-                .ToList();
+                if (parentEcho == null)
+                {
+                    return RedirectToAction("Index");
+                }
 
-            ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
+                echo.CommParentId = id;
+                echo.FlockId = parentEcho.FlockId;
+
+                ViewBag.Flock = db.Flocks.Find(parentEcho.FlockId);
+            }
+            else
+            {
+                // Load all flocks for dropdown
+                var flocks = db.Flocks
+                    .Where(f => f.FlockStatus == "active")
+                    .OrderBy(f => f.Name)
+                    .ToList();
+
+                ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
+            }
 
             SetAccessRights();
 
@@ -138,9 +154,8 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // POST: Procesează datele trimise de utilizator
-        [Authorize(Roles = "User ,Admin")]
-
         [HttpPost]
+        [Authorize(Roles = "User ,Admin")]
         public async Task<IActionResult> New(Echo echo, IFormFile? att1, IFormFile? att2)
         {
             echo.DateCreated = DateTime.Now;
@@ -173,6 +188,9 @@ namespace BAtwitter_DAW_2526.Controllers
                 }
             }
 
+            // Explicitly ensure Id is 0 for new entities to avoid identity column errors
+            echo.Id = 0;
+
             if (TryValidateModel(echo))
             {
                 db.Echoes.Add(echo);
@@ -181,11 +199,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -197,11 +215,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -217,39 +235,34 @@ namespace BAtwitter_DAW_2526.Controllers
                     await db.SaveChangesAsync();
                 }
 
-                TempData["message"] = "Echo was sent succesfully!";
-                TempData["type"] = "alert-success";
+                if (echo.CommParentId != null)
+                {
+                    TempData["message"] = "Comment was added succesfully!";
+                    TempData["type"] = "alert-success";
 
-                return RedirectToAction("Index");
+                    Echo? parentEcho = db.Echoes.Where(e => e.Id == echo.CommParentId).FirstOrDefault();
+                    if (parentEcho != null)
+                    {
+                        parentEcho.CommentsCount++;
+                        await db.SaveChangesAsync();
+                    }
+
+                    return RedirectToAction("Show", new { id = echo.CommParentId });
+                }
+                else
+                {
+                    TempData["message"] = "Echo was sent succesfully!";
+                    TempData["type"] = "alert-success";
+                    return RedirectToAction("Index");
+                }
+                    
             }
 
             SetAccessRights();
             return View(echo);
         }
 
-        /*
-        // Adaugarea unui comentariu asociat unui articol in baza de date
-        [HttpPost]
-        public IActionResult New(Comment comm)
-        {
-            comm.Date = DateTime.Now;
-
-            if (ModelState.IsValid)
-            {
-                db.Comments.Add(comm);
-                db.SaveChanges();
-                return Redirect("/Articles/Show/" + comm.ArticleId);
-            }
-
-            return Redirect("/Articles/Show/" + comm.ArticleId);
-        }
-        */
-
-
-
         // [HttpGet] se executa implicit
-        // Se afiseaza formularul impreuna cu datele aferente articolului din baza de date
-
         [Authorize(Roles = "User, Admin")]
         public IActionResult Edit(int id)
         {
@@ -351,11 +364,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -368,11 +381,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -401,7 +414,6 @@ namespace BAtwitter_DAW_2526.Controllers
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
-
         public ActionResult Delete(int id)
         {
             Echo? echo = db.Echoes.Find(id);
@@ -519,7 +531,6 @@ namespace BAtwitter_DAW_2526.Controllers
             // Redirect to the original post
             int originalEchoId = GetOriginalEchoId(parentEcho);
             return RedirectToAction("Show", originalEchoId);
-
         }
 
         // other methods
@@ -572,7 +583,7 @@ namespace BAtwitter_DAW_2526.Controllers
             while (current.CommParentId != null)
             {
                 current = db.Echoes
-                    .Where(e => e.Id == current.CommParentId && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza echo-urile sterse
+                    .Where(e => e.Id == current.CommParentId && e.UserId != deletedUserId) // Trebuie sa filtreze echo-urile sterse? - && !e.IsRemoved 
                     .FirstOrDefault();
                 if (current == null) 
                     break;
