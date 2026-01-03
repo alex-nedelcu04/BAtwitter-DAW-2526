@@ -69,7 +69,7 @@
         }
 
         <!-- MODIFY AND DELETE BUTTONS -->
-        @if (Model.AdminId == ViewBag.CurrentUser)
+        @if (Model.AdminId == ViewBag.CurrentUser || ViewBag.IsAdmin)
         {
             <div class="d-flex flex-row justify-content-between mt-3">
                 <a class="btn btn-success" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Flock</a>

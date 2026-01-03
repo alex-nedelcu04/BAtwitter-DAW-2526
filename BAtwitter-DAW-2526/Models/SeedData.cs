@@ -83,6 +83,17 @@ namespace BAtwitter_DAW_2526.Models
                             Email = "user@test.com",
                             NormalizedUserName = "USER_TEST",
                             PasswordHash = hasher.HashPassword(null, "User1!")
+                        },
+                        new ApplicationUser
+                        {
+                            Id = "8e445865-a24d-4543-a6c6-9443d048cdb3",
+                            // primary key - utilizator pentru postările șterse
+                            UserName = "deleted",
+                            EmailConfirmed = true,
+                            NormalizedEmail = "DELETED@SYSTEM.COM",
+                            Email = "deleted@system.com",
+                            NormalizedUserName = "DELETED",
+                            PasswordHash = hasher.HashPassword(null, "Deleted1!")
                         }
                     );
 
@@ -104,9 +115,16 @@ namespace BAtwitter_DAW_2526.Models
                     {
                         RoleId = "2c5e174e-3b0e-446f-86af-483d56fd7212",
                         UserId = "8e445865-a24d-4543-a6c6-9443d048cdb2"
+                    },
+                    new IdentityUserRole<string>
+                    {
+                        RoleId = "2c5e174e-3b0e-446f-86af-483d56fd7212",
+                        UserId = "8e445865-a24d-4543-a6c6-9443d048cdb3"
                     }
                     );
                 }
+
+               
 
                 if (!context.UserProfiles.Any())
                 {
@@ -138,7 +156,17 @@ namespace BAtwitter_DAW_2526.Models
                             //BannerLink = "/Resources/Images/banner-default.jpg",
                             JoinDate = DateTime.Now,
                             AccountStatus = "active"
-                        }
+                        },
+
+                         new UserProfile
+                         {
+                             Id = "8e445865-a24d-4543-a6c6-9443d048cdb3", // ApplicationUserId - utilizator pentru postările șterse
+                             DisplayName = "Deleted User",
+                             //PfpLink = "/Resources/Images/user_default_pfp.jpg",
+                             //BannerLink = "/Resources/Images/banner-default.jpg",
+                             JoinDate = DateTime.Now,
+                             AccountStatus = "deleted"
+                         }
                     );
                 }
 

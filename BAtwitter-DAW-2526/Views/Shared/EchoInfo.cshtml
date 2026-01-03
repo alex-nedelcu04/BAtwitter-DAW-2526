@@ -15,8 +15,18 @@
             <div class="d-flex align-items-center">
                 @if (Model.User != null && !string.IsNullOrEmpty(Model.User.PfpLink))
                 {
-                    <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
-                         style="width: 48px; height: 48px; object-fit: cover;" />
+                    @if (Model.User?.ApplicationUser != null)
+                    {
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-decoration-none">
+                            <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                                 style="width: 48px; height: 48px; object-fit: cover;" />
+                        </a>
+                    }
+                    else
+                    {
+                        <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                             style="width: 48px; height: 48px; object-fit: cover;" />
+                    }
                 }
                 else
                 {
@@ -24,15 +34,20 @@
                 }
 
                 <div class="d-flex flex-column">
-                    <span class="fw-semibold">
-                        @(Model.User?.DisplayName ?? "Unknown user")
-                    </span>
-
                     @if (Model.User?.ApplicationUser != null)
                     {
-                        <small class="text-muted">
-                            @("@" + Model.User.ApplicationUser.UserName)
-                        </small>
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none text-dark">
+                            @(Model.User?.DisplayName ?? "Unknown user")
+                        </a>
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-muted text-decoration-none">
+                            <small>@("@" + Model.User.ApplicationUser.UserName)</small>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="fw-semibold">
+                            @(Model.User?.DisplayName ?? "Unknown user")
+                        </span>
                     }
 
                     @if (Model.Flock != null)
@@ -171,10 +186,12 @@
             </div>
         </div>
 
-        @if (Model.UserId == ViewBag.CurrentUser && showButtons && !Model.IsRemoved)
+        @if ((Model.UserId == ViewBag.CurrentUser || ViewBag.IsAdmin) && showButtons && !Model.IsRemoved)
         {
             <div class="d-flex flex-row justify-content-between mt-3">
-                <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
+                @if (Model.UserId == ViewBag.CurrentUser) {
+                    <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
+                }
                 <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                     <button class="btn btn-danger" type="submit">Delete Echo</button>
                 </form>

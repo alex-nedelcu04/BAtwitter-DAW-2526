@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BAtwitter_DAW_2526.Areas.Identity.Pages.Account;
 
 namespace BAtwitter_DAW_2526.Controllers
 {
@@ -15,29 +16,35 @@ namespace BAtwitter_DAW_2526.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IWebHostEnvironment _env;
 
-        public UserProfilesController(ApplicationDbContext context, UserManager<ApplicationUser> usrm, RoleManager<IdentityRole> rlm, IWebHostEnvironment env)
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ILogger<LogoutModel> _logger;
+
+        public UserProfilesController(ApplicationDbContext context, UserManager<ApplicationUser> usrm, RoleManager<IdentityRole> rlm, IWebHostEnvironment env, SignInManager<ApplicationUser> signInManager, ILogger<LogoutModel> logger)
         {
             db = context;
             _roleManager = rlm;
             _userManager = usrm;
             _env = env;
+
+            _signInManager = signInManager;
+            _logger = logger;
         }
 
         // Index ar trb sa fie profilul utilizatorului curent (sau redirect la Show cu username-ul curent)
         // [HttpGet] care se executa implicit
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Index()
         {
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null)
             {
-                return RedirectToAction("Login", "Account", new { area = "Identity" });
+                return RedirectToAction("Login", "Account", "Identity");
             }
 
             var currentUser = db.Users.Find(currentUserId);
             if (currentUser == null)
             {
-                return RedirectToAction("Login", "Account", new { area = "Identity" });
+                return RedirectToAction("Login", "Account", "Identity" );
             }
 
             return RedirectToAction("Show", new { username = currentUser.UserName });
@@ -45,7 +52,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // New nu e necesar pentru UserProfile
         // Dacă UserProfile nu există, redirect la Register
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         public IActionResult New()
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -65,17 +72,17 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             // Daca nu exista => redirect la Register
-            return RedirectToAction("Register", "Account", new { area = "Identity" });
+            return RedirectToAction("Register", "Account", "Identity");
         }
 
-       
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Edit(string id)
         {
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null)
             {
-                return RedirectToAction("Login", "Account", new { area = "Identity" });
+                return RedirectToAction("Login", "Account", "Identity");
             }
 
             UserProfile? userProfile = db.UserProfiles
@@ -92,6 +99,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (userProfile.Id == currentUserId)
             {
+                SetAccessRights();
                 return View(userProfile);
             }
             else
@@ -103,14 +111,14 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // POST pt Edit, kind of just copy pasted cu niste micute modificari ca o sa fie basically acelasi lucru at the end of the day
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         [HttpPost]
         public async Task<IActionResult> Edit(string id, UserProfile reqUserProfile, IFormFile? pfp, IFormFile? banner, bool removePfp = false, bool removeBanner = false)
         {
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null)
             {
-                return RedirectToAction("Login", "Account", new { area = "Identity" });
+                return RedirectToAction("Login", "Account", "Identity");
             }
 
             UserProfile? userProfile = db.UserProfiles.Find(id);
@@ -165,6 +173,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("PfpLink", "Profile picture must be an image (jpg, jpeg, png, webp).");
+                    SetAccessRights();
                     return View(userProfile);
                 }
             }
@@ -176,6 +185,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("BannerLink", "Banner must be an image (jpg, jpeg, png, webp)");
+                    SetAccessRights();
                     return View(userProfile);
                 }
             }
@@ -240,20 +250,21 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                SetAccessRights();
                 return View(userProfile);
             }
         }
 
         // Delete pentru UserProfile - probabil nu ar trebui să fie disponibil sau ar trebui să fie diferit
         // Poate doar să marcheze contul ca "deleted" sau "suspended" în loc să șteargă efectiv
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         [HttpPost]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> Delete(string id)
         {
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null)
             {
-                return RedirectToAction("Login", "Account", new { area = "Identity" });
+                return RedirectToAction("Login", "Account", "Identity");
             }
 
             UserProfile? userProfile = db.UserProfiles.Find(id);
@@ -267,26 +278,53 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (userProfile.Id == currentUserId)
             {
-                // Marchează contul ca șters în loc să-l ștergi efectiv
-                // Sau poți șterge UserProfile dacă e necesar, dar ApplicationUser va rămâne
+                // Obține utilizatorul deleted
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["userprofile-message"] = "System error: deleted user not found!";
+                    TempData["userprofile-type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+
+                // Marchează contul ca șters
                 userProfile.AccountStatus = "deleted";
 
-                // Marchează toate echo-urile utilizatorului ca șterse
+                // Atribuie toate echo-urile utilizatorului la utilizatorul deleted
                 var userEchoes = db.Echoes
-                    .Where(e => e.UserId == id && !e.IsRemoved && e.CommParentId == null)
+                    .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
                     .ToList();
 
                 foreach (var echo in userEchoes)
                 {
-                    MarkEchoAndChildrenAsRemoved(echo);
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
                 }
 
                 try
                 {
-                    db.SaveChanges();
+                    var user = await _userManager.GetUserAsync(User);
+
+                    if (user == null)
+                    {
+                        DbUpdateException a = new();
+                        throw a;
+                    }
+
+                    db.UserProfiles.Remove(userProfile);
+
+                    await _userManager.DeleteAsync(user);
+                    await _signInManager.SignOutAsync();
+                    _logger.LogInformation("User logged out.");
+
+                    await db.SaveChangesAsync();
 
                     TempData["userprofile-message"] = "Account was deleted!";
                     TempData["userprofile-type"] = "alert-info";
+
+
                     return RedirectToAction("Index", "Home");
                 }
                 catch (DbUpdateException)
@@ -315,7 +353,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // Show va fi ca o vizualizare a profilului unui user designwise
         // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         [Route("UserProfiles/Show/{username}")]
         public IActionResult Show(string username)
         {
@@ -349,11 +387,17 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Obține ID-ul utilizatorului deleted pentru a-l exclude
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             var echoes = db.Echoes
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
-                            .Where(e => e.UserId == userProfile.Id && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
+                            .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
@@ -365,12 +409,28 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["userprofile-type"];
             }
 
+            SetAccessRights();
+
             return View(userProfile);
         }
 
 
 
         // Other Methods
+
+        private void SetAccessRights()
+        {
+            ViewBag.VisibleShowDelete = false;
+
+            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            ViewBag.IsAdmin = User.IsInRole("Admin");
+
+            if (User.IsInRole("Editor"))
+            {
+                ViewBag.VisibleShowDelete = true;
+            }
+        }
+
         private void DeletePhysicalFile(string relativePath)
         {
             var physicalPath = Path.Combine(
@@ -384,19 +444,19 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
-        // Stergere echo si comentarii recursiv
-        private void MarkEchoAndChildrenAsRemoved(Echo echo)
+        // Atribuie echo și comentarii recursiv la utilizatorul deleted
+        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
         {
+            echo.UserId = deletedUserId;
             echo.IsRemoved = true;
-            // Nu elimin UserId pentru că echo-urile rămân asociate cu utilizatorul chiar dacă sunt marcate ca șterse
 
             var comments = db.Echoes
-                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
+                            .Where(ech => ech.CommParentId == echo.Id && ech.UserId != deletedUserId)
                             .ToList();
 
             foreach (var comment in comments)
             {
-                MarkEchoAndChildrenAsRemoved(comment);
+                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
             }
         }
     }

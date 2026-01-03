@@ -23,15 +23,17 @@ namespace BAtwitter_DAW_2526.Controllers
             _env = env;
         }
 
-        // Se afiseaza lista tuturor articolelor impreuna cu categoria 
-        // din care fac parte
-        // Pentru fiecare articol se afiseaza si userul care a postat articolul
         // [HttpGet] care se executa implicit
-        // [Authorize(Roles = "User,Editor,Admin")]
+        [Authorize(Roles = "User,Admin")]
         public IActionResult Index()
         {
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             var echoes = db.Echoes
-                            .Where(ech => !ech.IsRemoved) // Filtreaza echo-urile sterse
+                            .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId) // Filtreaza echo-urile sterse
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
@@ -46,15 +48,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            SetAccessRights();
+
             return View();
         }
 
-        // Se afiseaza un singur articol in functie de id-ul sau 
-        // impreuna cu categoria din care face parte
-        // In plus sunt preluate si toate comentariile asociate unui articol
-        // Se afiseaza si userul care a postat articolul
         // [HttpGet] se executa implicit
-        //[Authorize(Roles = "User,Editor,Admin")]
+        [Authorize(Roles = "User,Admin")]
         public IActionResult Show(int id)
         {
             Echo? echo = db.Echoes
@@ -111,14 +111,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            SetAccessRights();
+
             return View(echo);
         }
 
-        // Se afiseaza formularul in care se vor completa datele unui articol
-        // impreuna cu selectarea categoriei din care face parte
-        // Doar userii cu rol de Editor / Admin pot adauga noi articole
+
         // [HttpGet] se executa implicit
-        //[Authorize(Roles = "Editor,Admin")]
+        [Authorize(Roles = "User, Admin")]
 
         public IActionResult New()
         {
@@ -132,12 +132,13 @@ namespace BAtwitter_DAW_2526.Controllers
 
             ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
 
+            SetAccessRights();
+
             return View(echo);
         }
 
         // POST: Procesează datele trimise de utilizator
-        // Doar userii cu rolul Editor / Admin pot adauga noi articole
-        //[Authorize(Roles = "Editor,Admin")]
+        [Authorize(Roles = "User ,Admin")]
 
         [HttpPost]
         public async Task<IActionResult> New(Echo echo, IFormFile? att1, IFormFile? att2)
@@ -155,6 +156,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Att1", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    SetAccessRights();
                     return View(echo);
                 }
             }
@@ -166,6 +168,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Att2", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    SetAccessRights();
                     return View(echo);
                 }
             }
@@ -220,6 +223,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            SetAccessRights();
             return View(echo);
         }
 
@@ -242,15 +246,11 @@ namespace BAtwitter_DAW_2526.Controllers
         */
 
 
-        // Se editeaza un articol existent in baza de date impreuna cu categoria din care face parte
-        // Categoria se selecteaza dintr-un dropdown
+
         // [HttpGet] se executa implicit
         // Se afiseaza formularul impreuna cu datele aferente articolului din baza de date
-        // Doar userii cu rolul Editor / Admin pot edita articolele
-        // Admin  -> oricare articol din BD
-        // Editor -> doar articolele scrise de ei insisi
-        //[Authorize(Roles = "Editor,Admin")]
-        
+
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Edit(int id)
         {
             Echo? echo = db.Echoes.Where(art => art.Id == id).FirstOrDefault();
@@ -271,6 +271,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (echo.UserId == _userManager.GetUserId(User))
             {
+                SetAccessRights();
                 return View(echo);
             }
             else
@@ -281,10 +282,8 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
-        // Se adauga articolul modificat in baza de date
-        // Se verifica rolul userului pentru a vedea daca poate edita
         [HttpPost]
-        //[Authorize(Roles = "Editor,Admin")]
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Edit(int id, Echo reqEcho, IFormFile? att1, IFormFile? att2, bool RemoveAtt1 = false, bool RemoveAtt2 = false)
         {
             Echo? echo = db.Echoes.Find(id);
@@ -303,7 +302,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (echo.UserId != _userManager.GetUserId(User))
+            if (echo.UserId != _userManager.GetUserId(User) ||  !User.IsInRole("Admin"))
             {
                 TempData["message"] = "You are not authorized to modify this echo.";
                 TempData["type"] = "alert-warning";
@@ -332,6 +331,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Att1", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    SetAccessRights();
                     return View(echo);
                 }
             }
@@ -343,6 +343,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Att2", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
+                    SetAccessRights();
                     return View(echo);
                 }
             }
@@ -392,19 +393,15 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                SetAccessRights();
                 return View(echo);
             }
         }
 
 
-        // Se sterge un articol din baza de date (soft delete - IsRemoved = true)
-        // Editorii sau Adminii pot sterge articole
-        // Editor -> articolele lor
-        // Admin  -> oricare articol din BD
-        // Soft delete pentru a pastra structura recursiva
         [HttpPost]
-        //[Authorize(Roles = "Editor,Admin")]
-        
+        [Authorize(Roles = "User, Admin")]
+
         public ActionResult Delete(int id)
         {
             Echo? echo = db.Echoes.Find(id);
@@ -416,17 +413,29 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (echo.IsRemoved)
+            // Obține utilizatorul deleted
+            var deletedUser = db.Users
+                .Where(u => u.UserName == "deleted")
+                .FirstOrDefault();
+
+            if (deletedUser == null)
+            {
+                TempData["message"] = "Deleted user not found!";
+                TempData["type"] = "alert-danger";
+                return RedirectToAction("Index");
+            }
+
+            if (echo.UserId == deletedUser.Id)
             {
                 TempData["message"] = "Echo was already deleted!";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            if (echo.UserId == _userManager.GetUserId(User))
+            if (echo.UserId == _userManager.GetUserId(User) || User.IsInRole("Admin"))
             {
-                // marcheaza echo-ul ca sters
-                echo.IsRemoved = true;
+                // Atribuie echo-ul și comentariile la utilizatorul deleted
+                AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
 
                 try
                 {
@@ -462,8 +471,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Obține ID-ul utilizatorului deleted pentru a-l exclude
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             Echo? parentEcho = db.Echoes
-                .Where(e => e.Id == echoId && !e.IsRemoved) // Filtreaza echo-urile sterse
+                .Where(e => e.Id == echoId && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza echo-urile sterse
                 .FirstOrDefault();
 
             if (parentEcho is null)
@@ -498,6 +513,8 @@ namespace BAtwitter_DAW_2526.Controllers
 
             TempData["message"] = "Comment added successfully!";
             TempData["type"] = "alert-success";
+
+            SetAccessRights();
 
             // Redirect to the original post
             int originalEchoId = GetOriginalEchoId(parentEcho);
@@ -545,16 +562,38 @@ namespace BAtwitter_DAW_2526.Controllers
         // highest ancestor
         private int GetOriginalEchoId(Echo echo)
         {
+            // Obține ID-ul utilizatorului deleted pentru a-l exclude
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             Echo? current = echo;
             while (current.CommParentId != null)
             {
                 current = db.Echoes
-                    .Where(e => e.Id == current.CommParentId && !e.IsRemoved) // Filtreaza echo-urile sterse
+                    .Where(e => e.Id == current.CommParentId && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza echo-urile sterse
                     .FirstOrDefault();
                 if (current == null) 
                     break;
             }
             return current?.Id ?? echo.Id;
+        }
+
+        // Atribuie echo și comentarii recursiv la utilizatorul deleted
+        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
+        {
+            echo.UserId = deletedUserId;
+            echo.IsRemoved = true;
+
+            var comments = db.Echoes
+                            .Where(ech => ech.CommParentId == echo.Id && ech.UserId != deletedUserId)
+                            .ToList();
+
+            foreach (var comment in comments)
+            {
+                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
+            }
         }
 
         // Stergerea fisierului din wwwroot

@@ -31,8 +31,9 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // Index ar trb sa fie lista tuturor flockurilor din aplicatie
         // ca un feed: cea mai noua postare + banner pt flockul respectiv deasupra postarii in stilul viewului de profil ca un fel de advertisment
-        // [HttpGet] care se executa implicit
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+
+
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Index()
         {
             Dictionary<int, Echo?> echoes = [];
@@ -44,11 +45,17 @@ namespace BAtwitter_DAW_2526.Controllers
                         .ThenInclude(u => u.ApplicationUser)
                 .OrderByDescending(ech => ech.DateCreated);
 
+     
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             foreach (var fl in flocks)
             {
                 Echo? ech = db.Echoes
                                 .Include(e => e.Flock)
-                                .Where(e => e.FlockId == fl.Id && !e.IsRemoved && e.CommParentId == null)
+                                .Where(e => e.FlockId == fl.Id && !e.IsRemoved && e.UserId != deletedUserId && e.CommParentId == null)
                                 .OrderByDescending(e => e.DateCreated)
                                 .FirstOrDefault();
 
@@ -64,15 +71,18 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["flock-type"];
             }
 
+            SetAccessRights();
+
             return View();
         }
 
         // New ar fi similar cu cel de la echo, numai ca poti pune banner si pfp in loc de 2 atasamente, deci trb modificata logica...
-        // [HttpGet] care se executa implicit
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+
+        [Authorize(Roles = "User, Admin")]
         public IActionResult New()
         {
             Flock fl = new();
+            SetAccessRights();
             return View(fl);
         }
 
@@ -81,7 +91,8 @@ namespace BAtwitter_DAW_2526.Controllers
         // am putea pune la nivel de frontend si un preview pt profil, ca sa vada userul cum ar arata profilul lor daca l-ar edita.
         // si daca e, putem face ceva similar si pt Echo sau comment, like un div de preview pt creearea postarii ca si cum am scrie divul ala live
         // gen yk cum teitter iti ofera un fel de preview cand scrii un tweet, cv de genul sa fie si pagina aia, dar mna asta e frontend
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+
+        [Authorize(Roles = "User, Admin")]
         [HttpPost]
         public async Task<IActionResult> New(Flock flock, IFormFile? pfp, IFormFile? banner)
         {
@@ -96,6 +107,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp).");
+                    SetAccessRights();
                     return View(flock);
                 }
             }
@@ -108,6 +120,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp).");
+                    SetAccessRights();
                     return View(flock);
                 }
             }
@@ -120,11 +133,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -136,11 +149,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (banner != null && banner.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, banner.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -162,11 +175,12 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            SetAccessRights();
             return View(flock);
         }
 
         // Edit va avea aceeasi chestie cu New la nivel de pagini etc. asa cum e si pt postari in sine
-        //[Authorize(Roles = "FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Edit(int id)
         {
             Flock? flock = db.Flocks.Where(f => f.Id == id).FirstOrDefault();
@@ -180,6 +194,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
+                SetAccessRights();
                 return View(flock);
             }
             else
@@ -191,7 +206,7 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // POST pt Edit, kind of just copy pasted cu niste micute modificari ca o sa fie basically acelasi lucru at the end of the day
-        //[Authorize(Roles = "FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         [HttpPost]
         public IActionResult Edit(int id, Flock reqFlock, IFormFile? pfp, IFormFile? banner, bool removePfp = false, bool removeBanner = false)
         {
@@ -236,6 +251,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif).");
+                    SetAccessRights();
                     return View(flock);
                 }
             }
@@ -247,6 +263,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 if (!extensions.Contains(fileExtension))
                 {
                     ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif)");
+                    SetAccessRights();
                     return View(flock);
                 }
             }
@@ -254,11 +271,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -271,11 +288,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -295,12 +312,13 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                SetAccessRights();
                 return View(flock);
             }
         }
 
         // Delete e doar o metoda POST, nu are pagina routed
-        //[Authorize(Roles = "FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         [HttpPost]
         public IActionResult Delete(int id)
         {
@@ -315,15 +333,27 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
-                // Sterge recursiv toate echo-urile principale din flock si comentariile lor
-                // (comentariile vor fi sterse recursiv, chiar daca au FlockId setat)
+                // Obține utilizatorul deleted
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["flock-message"] = "Deleted user not found!";
+                    TempData["flock-type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+
+                // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
+                // (comentariile vor fi atribuite recursiv, chiar daca au FlockId setat)
                 var flockEchoes = db.Echoes
-                    .Where(e => e.FlockId == id && !e.IsRemoved && e.CommParentId == null)
+                    .Where(e => e.FlockId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
                     .ToList();
 
                 foreach (var echo in flockEchoes)
                 {
-                    MarkEchoAndChildrenAsRemoved(echo);
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
                 }
                 
                 db.SaveChanges();
@@ -356,7 +386,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // Show va fi ca o vizualizare a profilului unui user designwise
         // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
-        // [Authorize(Roles = "FlockUser, FlockModerator, FlockAdmin")]
+        [Authorize(Roles = "User, Admin")]
         public IActionResult Show(int id)
         {
             var flock = db.Flocks
@@ -373,11 +403,16 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
             var echoes = db.Echoes // am pus si Echoes ca mna afisam practic toate postarile din comunitate
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u.ApplicationUser)
                             .Include(ech => ech.Interactions)
-                            .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
+                            .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
@@ -389,12 +424,28 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["flock-type"];
             }
 
+            SetAccessRights();
+
             return View(flock);
         }
 
 
 
         // Other Methods
+
+        private void SetAccessRights()
+        {
+            ViewBag.VisibleShowDelete = false;
+
+            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            ViewBag.IsAdmin = User.IsInRole("Admin");
+
+            if (User.IsInRole("Editor"))
+            {
+                ViewBag.VisibleShowDelete = true;
+            }
+        }
+
         private void DeletePhysicalFile(string relativePath)
         {
             var physicalPath = Path.Combine(
@@ -408,19 +459,20 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
-        // Stergere echo si comentarii recursiv
-        private void MarkEchoAndChildrenAsRemoved(Echo echo)
+        // Atribuie echo și comentarii recursiv la utilizatorul deleted
+        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
         {
+            echo.UserId = deletedUserId;
             echo.IsRemoved = true;
             echo.FlockId = null; // elimina FK-ul catre flock
 
             var comments = db.Echoes
-                            .Where(ech => ech.CommParentId == echo.Id && !ech.IsRemoved)
+                            .Where(ech => ech.CommParentId == echo.Id && ech.UserId != deletedUserId)
                             .ToList();
 
             foreach (var comment in comments)
             {
-                MarkEchoAndChildrenAsRemoved(comment);
+                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
             }
         }
     }
