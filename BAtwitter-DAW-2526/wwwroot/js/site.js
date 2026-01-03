@@ -62,5 +62,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
         }
+
+
+    });
+
+    document.querySelectorAll('.userprofile-card').forEach(function (card) {
+        card.addEventListener('click', function (e) {
+            // Navigate only if clicking on the card itself, not on links or buttons
+            if (e.target.closest('a, button, video')) {
+                return;
+            }
+
+            const url = card.getAttribute('data-userprofile-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
     });
 });
+

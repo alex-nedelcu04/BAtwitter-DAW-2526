@@ -1,189 +1,207 @@
 ﻿@model BAtwitter_DAW_2526.Models.Echo
 @using System.IO
 
+@functions {
+    bool AnyNonRemoved(ICollection<Echo> echs)
+    {
+        foreach (var ech in echs)
+        {
+            if (!ech.IsRemoved)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 <div class="ms-4 mt-3">
+    @if (Model.IsRemoved)
+    {
+        <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+            This Echo has been removed.
+        </small>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-2 comment-card" data-comment-url="@(Url.Action("Show", "Echoes", new { id = Model.Id }) + "#here")">
+            <div class="card-body">
 
-    <div class="card shadow-sm mb-4 comment-card"
-         data-comment-url="@Url.Action("Show", "Echoes", new { id = Model.Id })">
-        <div class="card-body">
+                <!-- HEADER: avatar + nume + username + edited at -->
+                <div class="d-flex justify-content-between align-items-start">
 
-            <!-- HEADER: avatar + nume + username + edited at -->
-            <div class="d-flex justify-content-between align-items-start">
-
-                <div class="d-flex align-items-center">
-                    @if (Model.User != null && !string.IsNullOrEmpty(Model.User.PfpLink))
-                    {
-                        @if (Model.User?.ApplicationUser != null)
-                        {
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-decoration-none">
-                                <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
-                                     style="width: 48px; height: 48px; object-fit: cover;" />
-                            </a>
-                        }
-                        else
+                    <div class="d-flex align-items-center">
+                        @if (Model.User != null && !string.IsNullOrEmpty(Model.User.PfpLink))
                         {
                             <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
                                  style="width: 48px; height: 48px; object-fit: cover;" />
                         }
-                    }
-                    else
-                    {
-                        <div class="rounded-circle bg-secondary me-2" style="width: 48px; height: 48px;"></div>
-                    }
-
-                    <div class="d-flex flex-column">
-                        @if (Model.User?.ApplicationUser != null)
-                        {
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none text-dark">
-                                @(Model.User?.DisplayName ?? "Unknown user")
-                            </a>
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-muted text-decoration-none">
-                                <small>@("@" + Model.User.ApplicationUser.UserName)</small>
-                            </a>
-                        }
                         else
                         {
+                            <div class="rounded-circle bg-secondary me-2" style="width: 48px; height: 48px;"></div>
+                        }
+
+                        <div class="d-flex flex-column">
                             <span class="fw-semibold">
                                 @(Model.User?.DisplayName ?? "Unknown user")
                             </span>
+
+                            @if (Model.User?.ApplicationUser != null)
+                            {
+                                <small class="text-muted">
+                                    @("@" + Model.User.ApplicationUser.UserName)
+                                </small>
+                            }
+                            @if (Model.Flock != null)
+                            {
+                                <small class="text-primary fw-semibold">
+                                    <a href="@Url.Action("Show", "Flocks", new { id = Model.Flock.Id })" class="text-primary text-decoration-none fw-semibold">
+                                        @Model.Flock.Name
+                                    </a>
+                                </small>
+                            }
+
+                        </div>
+                    </div>
+
+                    <div class="text-end small text-muted">
+                        @* "edited at" doar dacă a fost editat *@
+                        @if (Model.DateEdited.HasValue && Model.DateEdited.Value > Model.DateCreated)
+                        {
+                            <div class="text-muted text-end">
+                                edited at: @Model.DateEdited.Value.ToString("HH:mm") - @Model.DateEdited.Value.ToString("MMM d, yyyy")
+                            </div>
                         }
                     </div>
+
                 </div>
 
-            <div class="text-end small text-muted">
-                @* "edited at" doar dacă a fost editat *@
-                @if (Model.DateEdited.HasValue && Model.DateEdited.Value > Model.DateCreated)
-                {
-                    <div class="text-muted text-end">
-                        edited at: @Model.DateEdited.Value.ToString("HH:mm") - @Model.DateEdited.Value.ToString("MMM d, yyyy")
-                    </div>
+                <!-- TEXT POSTARE -->
+                <div class="mb-3 mt-1 post-click-area">
+                    @if (!string.IsNullOrWhiteSpace(Model.Content))
+                    {
+                        @Html.Raw(Html.Encode(Model.Content).Replace("\n", "<br />"))
+                    }
+                </div>
+
+                <!-- ATAȘAMENTE -->
+                @{
+                    var attCount = Convert.ToInt32(!string.IsNullOrEmpty(Model.Att1)) + Convert.ToInt32(!string.IsNullOrEmpty(Model.Att2));
                 }
-            </div>
 
-            </div>
-
-            <!-- TEXT POSTARE -->
-            <div class="mb-3 mt-1 post-click-area">
-                @if (!string.IsNullOrWhiteSpace(Model.Content))
+                @if (attCount > 0)
                 {
-                    @Html.Raw(Html.Encode(Model.Content).Replace("\n", "<br />"))
-                }
-            </div>
+                    <div class="row g-3 mb-3 justify-content-center">
 
-            <!-- ATAȘAMENTE -->
-            @{
-                var attCount = Convert.ToInt32(!string.IsNullOrEmpty(Model.Att1)) + Convert.ToInt32(!string.IsNullOrEmpty(Model.Att2));
-            }
+                        @* ATTACHMENT #1 *@
+                        @if (!string.IsNullOrEmpty(Model.Att1))
+                        {
+                            var ext1 = System.IO.Path.GetExtension(Model.Att1).ToLower();
+                            var isImg1 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext1);
+                            var isVid1 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext1);
+                            var colClass = "col-md-6";
+                            var isMid = attCount == 1 ? "justify-content-center" : "";
 
-            @if (attCount > 0)
-            {
-                <div class="row g-3 mb-3 justify-content-center">
-
-                @* ATTACHMENT #1 *@
-                @if (!string.IsNullOrEmpty(Model.Att1))
-                {
-                    var ext1 = System.IO.Path.GetExtension(Model.Att1).ToLower();
-                    var isImg1 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext1);
-                    var isVid1 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext1);
-                    var colClass = "col-md-6";
-                    var isMid = attCount == 1 ? "justify-content-center" : "";
-
-                    <div class="@colClass @isMid">
-                        <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
-                            @if (isImg1)
-                            {
-                                <!-- CLICK PE POZĂ => TAB NOU -->
-                                <a href="@Model.Att1" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
-                                    <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
-                                </a>
-                            }
-                            else if (isVid1)
-                            {
-                                <video src="@Model.Att1" class="w-100 h-100" style="object-fit:cover;" controls></video>
-                            }
-                            else
-                            {
-                                <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
-                                    Attachment #1
+                            <div class="@colClass @isMid">
+                                <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
+                                    @if (isImg1)
+                                    {
+                                        <!-- CLICK PE POZĂ => TAB NOU -->
+                                        <a href="@Model.Att1" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
+                                            <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
+                                        </a>
+                                    }
+                                    else if (isVid1)
+                                    {
+                                        <video src="@Model.Att1" class="w-100 h-100" style="object-fit:cover;" controls></video>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
+                                            Attachment #1
+                                        </div>
+                                    }
                                 </div>
-                            }
-                        </div>
-                    </div>
-                }
+                            </div>
+                        }
 
-                @* ATTACHMENT #2 *@
-                @if (!string.IsNullOrEmpty(Model.Att2))
-                {
-                    var ext2 = System.IO.Path.GetExtension(Model.Att2).ToLower();
-                    var isImg2 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext2);
-                    var isVid2 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext2);
-                    var colClass = "col-md-6"; // attCount == 1 ? "col-12" :
-                    var isMid = attCount == 1 ? "justify-content-center" : "";
+                        @* ATTACHMENT #2 *@
+                        @if (!string.IsNullOrEmpty(Model.Att2))
+                        {
+                            var ext2 = System.IO.Path.GetExtension(Model.Att2).ToLower();
+                            var isImg2 = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Contains(ext2);
+                            var isVid2 = new[] { ".mp4", ".mov", ".webm" }.Contains(ext2);
+                            var colClass = "col-md-6"; // attCount == 1 ? "col-12" :
+                            var isMid = attCount == 1 ? "justify-content-center" : "";
 
-                    <div class="@colClass @isMid">
-                        <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
-                            @if (isImg2)
-                            {
-                                <!-- CLICK PE POZĂ => TAB NOU -->
-                                <a href="@Model.Att2" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
-                                    <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
-                                </a>
-                            }
-                            else if (isVid2)
-                            {
-                                <video src="@Model.Att2" class="w-100 h-100" style="object-fit: cover;" controls></video>
-                            }
-                            else
-                            {
-                                <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
-                                    Attachment #2
+                            <div class="@colClass @isMid">
+                                <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
+                                    @if (isImg2)
+                                    {
+                                        <!-- CLICK PE POZĂ => TAB NOU -->
+                                        <a href="@Model.Att2" target="_blank" rel="noopener noreferrer" class="d-block w-100 h-100">
+                                            <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
+                                        </a>
+                                    }
+                                    else if (isVid2)
+                                    {
+                                        <video src="@Model.Att2" class="w-100 h-100" style="object-fit: cover;" controls></video>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex justify-content-center align-items-center w-100 h-100 text-muted">
+                                            Attachment #2
+                                        </div>
+                                    }
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
+
                     </div>
                 }
 
-            </div>
-            }
+                <!-- FOOTER: interacțiuni + created at -->
+                <div class="d-flex justify-content-between align-items-center mt-2">
 
-            <!-- FOOTER: interacțiuni + created at -->
-            <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="small text-muted d-flex align-items-center flex-wrap">
+                        <span class="me-3 d-flex align-items-center">
+                            <i class="bi bi-chat me-1"></i> @Model.CommentsCount
+                        </span>
 
-                <div class="small text-muted d-flex align-items-center flex-wrap">
-                    <span class="me-3 d-flex align-items-center">
-                        <i class="bi bi-chat me-1"></i> @Model.CommentsCount
-                    </span>
+                        <span class="me-3 d-flex align-items-center">
+                            <i class="bi bi-arrow-repeat me-1"></i> @Model.ReboundCount
+                        </span>
 
-                    <span class="me-3 d-flex align-items-center">
-                        <i class="bi bi-arrow-repeat me-1"></i> @Model.ReboundCount
-                    </span>
+                        <span class="me-3 d-flex align-items-center">
+                            <i class="bi bi-megaphone me-1"></i> @Model.AmplifierCount
+                        </span>
 
-                    <span class="me-3 d-flex align-items-center">
-                        <i class="bi bi-megaphone me-1"></i> @Model.AmplifierCount
-                    </span>
+                        <span class="me-3 d-flex align-items-center">
+                            <i class="bi bi-bookmark me-1"></i> @Model.BookmarksCount
+                        </span>
 
-                    <span class="me-3 d-flex align-items-center">
-                        <i class="bi bi-bookmark me-1"></i> @Model.BookmarksCount
-                    </span>
+                        <span class="d-flex align-items-center">
+                            <i class="bi bi-heart me-1"></i> @Model.LikesCount
+                        </span>
+                    </div>
 
-                    <span class="d-flex align-items-center">
-                        <i class="bi bi-heart me-1"></i> @Model.LikesCount
-                    </span>
-                </div>
-
-                <div class="small text-muted text-end">
-                    created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
+                    <div class="small text-muted text-end">
+                        created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
+                    </div>
                 </div>
             </div>
-
         </div>
-    </div>
+    }
 
     @* REPLIES (recursiv) *@
     @if (Model.Comments != null && Model.Comments.Any())
     {
-        <div style="margin-left: 30px; border-left: 2px solid #ddd; padding-left: 15px; margin-top: 10px;">
-            @foreach (var reply in Model.Comments.OrderBy(c => c.DateCreated))
+        <a class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+           data-bs-toggle="collapse" data-bs-target="@(".collapseComments" + Model.Id)" aria-expanded="false" aria-controls="@("collapseComments" + Model.Id)" style="user-select: none">
+            Show Echo Comments
+        </a>
+        <div class="collapse @("collapseComments" + Model.Id)" style="border-left: 2px solid #ddd; margin-top: 10px;">
+            @foreach (var reply in Model.Comments.Where(c => (c.Comments != null && @AnyNonRemoved(c.Comments) && c.IsRemoved) || !c.IsRemoved).OrderBy(c => c.DateCreated))
             {
                 <partial name="CommentRecursion" model="reply" />
             }
