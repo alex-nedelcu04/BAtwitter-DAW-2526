@@ -142,6 +142,31 @@ namespace BAtwitter_DAW_2526.Controllers
                 };
                 db.Interactions.Add(inter);
                 echo.ReboundCount++;
+                
+                try
+                {
+                    db.SaveChanges();
+                }
+                catch (DbUpdateException)
+                {
+                    // Race condition: interaction was created by another request
+                    // Reload from database and toggle
+                    db.Entry(inter).State = EntityState.Detached;
+                    db.Entry(echo).State = EntityState.Detached;
+                    inter = db.Interactions.Find(userId, EchoId);
+                    echo = db.Echoes.Find(EchoId);
+                    if (inter != null && echo != null)
+                    {
+                        inter.Rebounded = !inter.Rebounded;
+                        inter.ReboundedDate = inter.Rebounded ? DateTime.Now : null;
+                        echo.ReboundCount = inter.Rebounded ? echo.ReboundCount + 1 : echo.ReboundCount - 1;
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        return Json(new { success = false, error = "Error updating interaction" });
+                    }
+                }
             }
             else
             {
@@ -158,9 +183,8 @@ namespace BAtwitter_DAW_2526.Controllers
                     inter.ReboundedDate = DateTime.Now;
                     echo.ReboundCount++;
                 }
+                db.SaveChanges();
             }
-
-            db.SaveChanges();
 
             // Return JSON response for AJAX
             return Json(new { 
@@ -201,6 +225,31 @@ namespace BAtwitter_DAW_2526.Controllers
                 };
                 db.Interactions.Add(inter);
                 echo.BookmarksCount++;
+                
+                try
+                {
+                    db.SaveChanges();
+                }
+                catch (DbUpdateException)
+                {
+                    // Race condition: interaction was created by another request
+                    // Reload from database and toggle
+                    db.Entry(inter).State = EntityState.Detached;
+                    db.Entry(echo).State = EntityState.Detached;
+                    inter = db.Interactions.Find(userId, EchoId);
+                    echo = db.Echoes.Find(EchoId);
+                    if (inter != null && echo != null)
+                    {
+                        inter.Bookmarked = !inter.Bookmarked;
+                        inter.BookmarkedDate = inter.Bookmarked ? DateTime.Now : null;
+                        echo.BookmarksCount = inter.Bookmarked ? echo.BookmarksCount + 1 : echo.BookmarksCount - 1;
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        return Json(new { success = false, error = "Error updating interaction" });
+                    }
+                }
             }
             else
             {
@@ -216,9 +265,8 @@ namespace BAtwitter_DAW_2526.Controllers
                     inter.BookmarkedDate = DateTime.Now;
                     echo.BookmarksCount++;
                 }
+                db.SaveChanges();
             }
-
-            db.SaveChanges();
 
             // Return JSON response for AJAX
             return Json(new { 
