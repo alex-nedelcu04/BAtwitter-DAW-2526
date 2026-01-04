@@ -1,0 +1,24 @@
+﻿<h2 class="text-center">List of Echoes</h2>
+<br />
+
+@if (ViewBag.Message != null)
+{
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<div class="d-flex flex-row justify-content-between mb-3">
+    <form method="post" asp-controller="Echoes" asp-action="MarkAllDeletedAdmin" onclick="event.stopPropagation();">
+        <button class="btn btn-warning" type="submit">Mark All Echoes as Deleted</button>
+    </form>
+
+    <form method="post" asp-controller="Echoes" asp-action="DeleteAllAdmin" onclick="event.stopPropagation();">
+        <button class="btn btn-danger" type="submit">Permanently Delete All Echoes</button>
+    </form>
+</div>
+
+@foreach (var echo in ViewBag.Echoes)
+{
+    <partial name="EchoInfo" model="echo" />
+}
+
+

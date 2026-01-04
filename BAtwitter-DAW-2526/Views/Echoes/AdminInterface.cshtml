@@ -1,0 +1,21 @@
+﻿<h2 class="text-center">Admin Interface (they don't deserve one)</h2>
+<br />
+
+@if (ViewBag.Message != null)
+{
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<ul class="d-flex flex-column flex-grow-1">
+    <li class="my-3">
+        <a asp-controller="Echoes" asp-action="IndexAdmin">Manage all Echoes</a>
+    </li>
+    <li class="my-3">
+        <a asp-controller="Flocks" asp-action="IndexAdmin">Manage all Flocks</a>
+    </li>
+    <li class="my-3">
+        <a asp-controller="UserProfiles" asp-action="IndexAdmin">Manage all Users</a>
+    </li>
+</ul>
+
+

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace BAtwitter_DAW_2526.Controllers
 {
@@ -38,11 +39,12 @@ namespace BAtwitter_DAW_2526.Controllers
         {
             Dictionary<int, Echo?> echoes = [];
             var flocks = db.Flocks
-                .Include(f => f.Admin)
+                .Include(f => f.Admin!)
                     .ThenInclude(a => a.ApplicationUser)
-                .Include(f => f.Echos)
-                    .ThenInclude(e => e.User)
+                .Include(f => f.Echos!)
+                    .ThenInclude(e => e.User!)
                         .ThenInclude(u => u.ApplicationUser)
+                .Where(fl => !fl.FlockStatus.Equals("deleted"))
                 .OrderByDescending(ech => ech.DateCreated);
 
      
@@ -76,8 +78,44 @@ namespace BAtwitter_DAW_2526.Controllers
             return View();
         }
 
-        // New ar fi similar cu cel de la echo, numai ca poti pune banner si pfp in loc de 2 atasamente, deci trb modificata logica...
+        [Authorize(Roles = "Admin")]
+        public IActionResult IndexAdmin()
+        {
+            Dictionary<int, Echo?> echoes = [];
+            var flocks = db.Flocks
+                .Include(f => f.Admin!)
+                    .ThenInclude(a => a.ApplicationUser)
+                .Include(f => f.Echos!)
+                    .ThenInclude(e => e.User!)
+                        .ThenInclude(u => u.ApplicationUser)
+                .OrderByDescending(ech => ech.DateCreated);
 
+            foreach (var fl in flocks)
+            {
+                Echo? ech = db.Echoes
+                                .Include(e => e.Flock)
+                                .Where(e => e.FlockId == fl.Id && !e.IsRemoved && e.CommParentId == null)
+                                .OrderByDescending(e => e.DateCreated)
+                                .FirstOrDefault();
+
+                echoes.TryAdd(fl.Id, ech);
+            }
+
+            ViewBag.Flocks = flocks;
+            ViewBag.EchoMap = echoes;
+
+            if (TempData.ContainsKey("flock-message"))
+            {
+                ViewBag.Message = TempData["flock-message"];
+                ViewBag.Type = TempData["flock-type"];
+            }
+
+            SetAccessRights();
+
+            return View();
+        }
+
+        // New ar fi similar cu cel de la echo, numai ca poti pune banner si pfp in loc de 2 atasamente, deci trb modificata logica...
         [Authorize(Roles = "User, Admin")]
         public IActionResult New()
         {
@@ -133,11 +171,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -149,11 +187,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (banner != null && banner.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, banner.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -271,11 +309,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -288,11 +326,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -317,9 +355,8 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
-        // Delete e doar o metoda POST, nu are pagina routed
-        [Authorize(Roles = "User, Admin")]
         [HttpPost]
+        [Authorize(Roles = "User,Admin")]
         public IActionResult Delete(int id)
         {
             Flock? flock = db.Flocks.Find(id);
@@ -331,7 +368,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (flock.AdminId == _userManager.GetUserId(User))
+            if (flock.AdminId == _userManager.GetUserId(User) || User.IsInRole("Admin"))
             {
                 // Obține utilizatorul deleted
                 var deletedUser = db.Users
@@ -358,9 +395,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 
                 db.SaveChanges();
 
-
-                db.Flocks.Remove(flock);
-
+                flock.FlockStatus = "deleted";
                 try
                 {
                     db.SaveChanges();
@@ -382,6 +417,194 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult DeleteAdmin(int id)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                Flock? flock = db.Flocks.Find(id);
+
+                if (flock is null)
+                {
+                    TempData["flock-message"] = "Flock does not exist!";
+                    TempData["flock-type"] = "alert-warning";
+                    return RedirectToAction("Index");
+                }
+            
+                // Obține utilizatorul deleted
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["flock-message"] = "Deleted user not found!";
+                    TempData["flock-type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+
+                // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
+                // (comentariile vor fi atribuite recursiv, chiar daca au FlockId setat)
+                var flockEchoes = db.Echoes
+                    .Where(e => e.FlockId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                    .ToList();
+
+                foreach (var echo in flockEchoes)
+                {
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                }
+
+                db.SaveChanges();
+
+                db.Flocks.Remove(flock);
+                try
+                {
+                    db.SaveChanges();
+                    TempData["flock-message"] = "Flock was deleted!";
+                    TempData["flock-type"] = "alert-info";
+                    return RedirectToAction("Index");
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["flock-message"] = "Flock could not be deleted...";
+                    TempData["flock-type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+            }
+            else
+            {
+                TempData["flock-message"] = "You are not authorized to delete this flock.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult MarkAllDeletedAdmin()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var flocks = db.Flocks.Where(fl => !fl.FlockStatus.Equals("deleted")).OrderByDescending(fl => fl.DateCreated).ToList();
+
+                if (flocks is null)
+                {
+                    TempData["flock-message"] = "There are no Flocks not marked as deleted!";
+                    TempData["flock-type"] = "alert-warning";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                var deletedUser = db.Users.Where(u => u.UserName == "deleted").FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["flock-message"] = "Deleted user not found!";
+                    TempData["flock-type"] = "alert-danger";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                foreach (var flock in flocks)
+                {
+                    var flockEchoes = db.Echoes
+                                            .Where(e => e.FlockId == flock.Id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                                            .ToList();
+
+                    foreach (var echo in flockEchoes)
+                    {
+                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    }
+
+                    db.SaveChanges();
+
+                    flock.FlockStatus = "deleted";
+                    try
+                    {
+                        db.SaveChanges();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        TempData["flock-flock-message"] = "Flock could not be deleted...";
+                        TempData["flock-flock-type"] = "alert-danger";
+                        return RedirectToAction("IndexAdmin");
+                    }
+                }   
+            }
+            else
+            {
+                TempData["flock-message"] = "You do not have the necessary permissions to delete all flocks.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
+            }
+
+            TempData["flock-message"] = "All non-\"deleted\" Flocks were marked as deleted!";
+            TempData["flock-type"] = "alert-info";
+            return RedirectToAction("IndexAdmin");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult DeleteAllAdmin()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var flocks = db.Flocks.OrderByDescending(fl => fl.DateCreated).ToList();
+
+                if (flocks is null)
+                {
+                    TempData["flock-message"] = "There are no Flocks in the database!";
+                    TempData["flock-type"] = "alert-warning";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                var deletedUser = db.Users.Where(u => u.UserName == "deleted").FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["flock-message"] = "Deleted user not found!";
+                    TempData["flock-type"] = "alert-danger";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                foreach (var flock in flocks)
+                {
+                    var flockEchoes = db.Echoes
+                                            .Where(e => e.FlockId == flock.Id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                                            .ToList();
+
+                    foreach (var echo in flockEchoes)
+                    {
+                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    }
+
+                    db.SaveChanges();
+
+                    db.Flocks.Remove(flock);
+                    try
+                    {
+                        db.SaveChanges();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        TempData["flock-flock-message"] = "Flock could not be deleted...";
+                        TempData["flock-flock-type"] = "alert-danger";
+                        return RedirectToAction("IndexAdmin");
+                    }
+                }
+            }
+            else
+            {
+                TempData["flock-message"] = "You do not have the necessary permissions to delete all flocks.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
+            }
+
+            TempData["flock-message"] = "All non-\"deleted\" Flocks were marked as deleted!";
+            TempData["flock-type"] = "alert-info";
+            return RedirectToAction("IndexAdmin");
+        }
+
 
 
         // Show va fi ca o vizualizare a profilului unui user designwise

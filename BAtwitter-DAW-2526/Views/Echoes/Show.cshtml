@@ -54,12 +54,14 @@
 
 @* Afisare comentarii recursive - afisate exact ca postarile *@
 
-@if (Model.Comments != null && @AnyNonRemoved(Model.Comments))
+@if (Model.Comments != null && (User.IsInRole("Admin") || @AnyNonRemoved(Model.Comments)))
 {
     <h5 class="mt-3 mb-3">Comments:</h5>
     <div style="border-left: 2px solid #ddd">
         @* class="me-4" *@
-        @foreach (var comm in Model.Comments.Where(c => (c.Comments != null && @AnyNonRemoved(c.Comments) && c.IsRemoved) || !c.IsRemoved).OrderBy(c => c.DateCreated))
+    @foreach (var comm in Model.Comments
+                                    .Where(c => User.IsInRole("Admin") || ((c.Comments != null && @AnyNonRemoved(c.Comments) && c.IsRemoved) || !c.IsRemoved))
+                                    .OrderBy(c => c.DateCreated))
         {
             <partial name="CommentRecursion" model="@comm" />
         }

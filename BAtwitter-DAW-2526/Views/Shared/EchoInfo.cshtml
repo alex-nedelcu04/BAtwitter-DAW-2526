@@ -3,13 +3,15 @@
 
 @{
     string path = Context.Request.Path.Value ?? "";
+    string typeComm = "comment", typeAmp = "amplifier";
     bool showButtons = path.Contains("Echoes/Show");
+    bool showAdmin = path.Contains("Echoes/IndexAdmin");
 
     // Check if current user has liked/rebounded this echo
     bool isLiked = false, isRebounded = false, isBookmarked = false;
     if (ViewBag.CurrentUser != null && Model.Interactions != null)
     {
-        var inter = Model.Interactions.FirstOrDefault(i => i.UserId == ViewBag.CurrentUser);
+        var inter = Model.Interactions!.FirstOrDefault(i => i.UserId == ViewBag.CurrentUser);
         if (inter != null)
         {
             isLiked = inter.Liked;
@@ -37,7 +39,7 @@
                     }
                     else
                     {
-                        <img src="@Model.User.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
+                        <img src="@Model.User!.PfpLink" alt="Profile Picture" class="rounded-circle me-2"
                              style="width: 48px; height: 48px; object-fit: cover;" />
                     }
                 }
@@ -46,13 +48,13 @@
                     <div class="rounded-circle bg-secondary me-2" style="width: 48px; height: 48px;"></div>
                 }
 
-                <div class="d-flex flex-column">
+                <div class="d-flex flex-column me-3">
                     @if (Model.User?.ApplicationUser != null)
                     {
                         <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none text-dark">
                             @(Model.User?.DisplayName ?? "Unknown user")
                         </a>
-                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="text-muted text-decoration-none">
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User!.ApplicationUser.UserName })" class="text-muted text-decoration-none">
                             <small>@("@" + Model.User.ApplicationUser.UserName)</small>
                         </a>
                     }
@@ -63,15 +65,31 @@
                         </span>
                     }
 
-                    @if (Model.Flock != null)
-                    {
+                    
+                </div>
+
+                @if (Model.Flock != null)
+                {
+                    <div class="d-flex flex-column  me-3">
                         <small class="text-primary fw-semibold">
                             <a href="@Url.Action("Show", "Flocks", new { id = Model.Flock.Id })" class="text-primary text-decoration-none fw-semibold">
                                 @Model.Flock.Name
                             </a>
                         </small>
-                    }
-                </div>
+                    </div>
+                }
+
+                @if (Model.CommParent != null)
+                {
+                    <div class="d-flex flex-column me-1">
+                        replying to:
+                    </div>
+                    <div class="d-flex flex-column me-3">
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.CommParent.User!.ApplicationUser!.UserName })" class="text-muted text-decoration-none">
+                            <small class="text-muted text-end">@("@" + Model.CommParent.User!.ApplicationUser!.UserName)</small>
+                        </a>
+                    </div>
+                }
             </div>
 
             <div class="text-end small text-muted">
@@ -93,7 +111,7 @@
             }
         </div>
 
-        <!-- ATA?AMENTE -->
+        <!-- ATASAMENTE -->
         @{
             var attCount = Convert.ToInt32(!string.IsNullOrEmpty(Model.Att1)) + Convert.ToInt32(!string.IsNullOrEmpty(Model.Att2));
         }
@@ -169,30 +187,28 @@
             </div>
         }
 
-        <div class="d-flex justify-content-center w-100">
-            <div style="width: 80%">
-                @if (Model.AmpParent != null)
-                {
+        @if (Model.AmpParent != null)
+        {
+            <div class="d-flex justify-content-center w-100">
+                <div style="width: 80%">
                     <partial name="AmplifyWindow" model="@Model.AmpParent" />
-                }
-                <partial name="AmplifyWindow" model="@Model" />
+                    @* <partial name="AmplifyWindow" model="@Model" /> *@
+                </div>
             </div>
-        </div>
-        
-        <!-- FOOTER: interac?iuni + created at -->
+        }
+
+        <!-- FOOTER: interactiuni + created at -->
         <div class="d-flex justify-content-between align-items-center mt-2">
 
             <div class="small text-muted d-flex align-items-center flex-wrap">
                 <span class="me-3 d-flex align-items-center">
-                    <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id">
-                        <i class="bi bi-chat me-1"></i> @Model.CommentsCount
-                    </a>
-                    <form asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id" class="d-inline">
+                    <form method="get" asp-controller="Echoes" asp-action="New">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="type" value="@typeComm" />
                         <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                            
+                            <i class="bi bi-chat me-1"></i> @Model.CommentsCount
                         </button>
                     </form>
-                    
                 </span>
 
                 <span class="me-3 d-flex align-items-center">
@@ -204,11 +220,25 @@
                     </form>
                 </span>
 
-                <span class="me-3 d-flex align-items-center"> <!-- NO -->
-                    <i class="bi bi-megaphone me-1"></i> @Model.AmplifierCount
+                <span class="me-3 d-flex align-items-center">
+                    <form method="get" asp-controller="Echoes" asp-action="New">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="type" value="@typeAmp" />
+                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                            <i class="bi bi-megaphone me-1"></i>
+                            @if (!showButtons || @Model.AmplifierCount == 0)
+                            {
+                                @Model.AmplifierCount
+                            }
+                        </button>
+                        @if (showButtons && @Model.AmplifierCount != 0)
+                        {
+                            <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
+                        }
+                    </form>
                 </span>
 
-                <span class="me-3 d-flex align-items-center"> <!-- NOT FINISHED ADD METHOD IN USERPROFILE -->
+                <span class="me-3 d-flex align-items-center">
                     <form method="post" asp-controller="Interactions" asp-action="New_Bookmark" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="bookmark">
                         <input type="hidden" name="EchoId" value="@Model.Id" />
                         <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
@@ -232,16 +262,53 @@
             </div>
         </div>
 
-        @if ((Model.UserId == ViewBag.CurrentUser || ViewBag.IsAdmin) && showButtons && !Model.IsRemoved)
+        @if (showAdmin && ViewBag.IsAdmin)
         {
-            <div class="d-flex flex-row justify-content-between mt-3">
-                @if (Model.UserId == ViewBag.CurrentUser) {
-                    <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
-                }
-                <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                    <button class="btn btn-danger" type="submit">Delete Echo</button>
-                </form>
-            </div>
+            @if (Model.IsRemoved)
+            {
+                <div class="d-flex flex-row justify-content-end mt-3">
+                    <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-row justify-content-between mt-3">
+                    <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
+                    </form>
+
+                    <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
+                    </form>
+                </div>
+            }
+        } 
+        else
+        {
+            @if ((Model.UserId == ViewBag.CurrentUser || ViewBag.IsAdmin) && showButtons && !Model.IsRemoved)
+            {
+                <div class="d-flex flex-row justify-content-between mt-3">
+                    @if (ViewBag.IsAdmin)
+                    {
+                        <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
+                        </form>
+
+                        <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
+                        <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-danger" type="submit">Delete Echo</button>
+                        </form>
+                    }
+                </div>
+            }
         }
 
         @if (Model.IsRemoved)

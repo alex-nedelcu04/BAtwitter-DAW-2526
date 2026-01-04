@@ -36,7 +36,10 @@ namespace BAtwitter_DAW_2526.Controllers
             var echoes = db.Echoes
                             .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId) // Filtreaza echo-urile sterse
                             .Include(ech => ech.User)
-                                .ThenInclude(u => u.ApplicationUser)
+                                .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .OrderByDescending(ech => ech.DateCreated);
@@ -54,6 +57,109 @@ namespace BAtwitter_DAW_2526.Controllers
             return View();
         }
 
+        // [HttpGet] care se executa implicit
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminInterface()
+        {
+            if (TempData.ContainsKey("message"))
+            {
+                ViewBag.Message = TempData["message"];
+                ViewBag.Type = TempData["type"];
+            }
+
+            SetAccessRights();
+            return View();
+        }
+
+        // [HttpGet] care se executa implicit
+        [Authorize(Roles = "Admin")]
+        public IActionResult IndexAdmin()
+        {
+            var echoes = db.Echoes
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.Interactions)
+                            .Include(ech => ech.Flock)
+                            .OrderByDescending(ech => ech.DateCreated);
+
+            ViewBag.Echoes = echoes;
+
+            if (TempData.ContainsKey("message"))
+            {
+                ViewBag.Message = TempData["message"];
+                ViewBag.Type = TempData["type"];
+            }
+
+            SetAccessRights();
+
+            return View();
+        }
+
+        // [HttpGet] care se executa implicit
+        [Authorize(Roles = "User,Admin")]
+        public IActionResult Amplifiers(int id)
+        {
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
+            var echoes = db.Echoes
+                            .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.AmpParentId == id) // Filtreaza echo-urile sterse
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.Interactions)
+                            .Include(ech => ech.Flock)
+                            .OrderByDescending(ech => ech.DateCreated);
+
+            ViewBag.Echoes = echoes;
+
+            if (TempData.ContainsKey("message"))
+            {
+                ViewBag.Message = TempData["message"];
+                ViewBag.Type = TempData["type"];
+            }
+
+            SetAccessRights();
+
+            return View();
+        }
+
+        // [HttpGet] care se executa implicit
+        [Authorize(Roles = "User,Admin")]
+        public IActionResult Bookmarks()
+        {
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
+            var bookmarkEchoes = db.Interactions
+                                    .Where(i => i.Bookmarked && i.UserId == _userManager.GetUserId(User) && !i.Echo!.IsRemoved && i.Echo.UserId != deletedUserId)
+                                    .OrderByDescending(i => i.BookmarkedDate)
+                                    .Include(i => i.Echo!.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(i => i.Echo!.AmpParent)
+                                        .ThenInclude(ech => ech!.User)
+                                            .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(i => i.Echo!.Interactions)
+                                    .Include(i => i.Echo!.Flock)
+                                    .Select(i => i.Echo)
+                                    .ToList();
+                                    // useful! - .AsNoTracking() - lista / rezultatul in sine devine readonly si nu poate fi modificat de db.SaveChanges();
+                                    
+            ViewBag.Echoes = bookmarkEchoes;
+            SetAccessRights();
+
+            return View();
+        }
+
         // [HttpGet] se executa implicit
         [Authorize(Roles = "User,Admin")]
         public IActionResult Show(int id)
@@ -61,13 +167,16 @@ namespace BAtwitter_DAW_2526.Controllers
             Echo? echo = db.Echoes
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
-                            .Include(ech => ech.Comments)
+                            .Include(ech => ech.Comments!)
                                 .ThenInclude(comm => comm.User)
-                                    .ThenInclude(u => u.ApplicationUser)
-                            .Include(ech => ech.Comments)
+                                    .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.Comments!)
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
-                                .ThenInclude(u => u.ApplicationUser)
+                                .ThenInclude(u => u!.ApplicationUser)
                             .Where(ech => ech.Id == id)
                             .FirstOrDefault();
 
@@ -87,7 +196,7 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.User)
-                                .ThenInclude(u => u.ApplicationUser)
+                                .ThenInclude(u => u!.ApplicationUser)
                             .Where(ech => ech.Id == curr.CommParentId)
                             .FirstOrDefault();
 
@@ -120,22 +229,29 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // [HttpGet] se executa implicit
         [Authorize(Roles = "User, Admin")]
-        public IActionResult New(int? id)
+        public IActionResult New(int? id, string? type)
         {
             Echo echo = new();
-            if (id != null)
+            if (id != null && type != null)
             {
-                Echo? parentEcho = db.Echoes.Where(e => e.Id == id).FirstOrDefault();
-
+                Echo? parentEcho = db.Echoes.Include(e => e.User).ThenInclude(u => u!.ApplicationUser).Where(e => e.Id == id).FirstOrDefault();
                 if (parentEcho == null)
                 {
                     return RedirectToAction("Index");
                 }
 
-                echo.CommParentId = id;
-                echo.FlockId = parentEcho.FlockId;
+                if (type.Equals("comment"))
+                {
+                    echo.CommParentId = id;
+                }
+                else if (type.Equals("amplifier"))
+                {
+                    echo.AmpParentId = id;
+                }
 
+                echo.FlockId = parentEcho.FlockId;
                 ViewBag.Flock = db.Flocks.Find(parentEcho.FlockId);
+                ViewBag.Parent = parentEcho;
             }
             else
             {
@@ -199,11 +315,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -215,11 +331,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -248,6 +364,20 @@ namespace BAtwitter_DAW_2526.Controllers
                     }
 
                     return RedirectToAction("Show", new { id = echo.CommParentId });
+                }
+                else if (echo.AmpParentId != null)
+                {
+                    TempData["message"] = "Amplifier was added succesfully!";
+                    TempData["type"] = "alert-success";
+
+                    Echo? parentEcho = db.Echoes.Where(e => e.Id == echo.AmpParentId).FirstOrDefault();
+                    if (parentEcho != null)
+                    {
+                        parentEcho.AmplifierCount++;
+                        await db.SaveChangesAsync();
+                    }
+
+                    return RedirectToAction("Show", new { id = echo.Id });
                 }
                 else
                 {
@@ -364,11 +494,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -381,11 +511,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -410,7 +540,6 @@ namespace BAtwitter_DAW_2526.Controllers
                 return View(echo);
             }
         }
-
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -465,73 +594,146 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
-                TempData["message"] = "You do not have the necessary permissions to modify this article.";
+                TempData["message"] = "You do not have the necessary permissions to delete this echo.";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
         }
 
         [HttpPost]
-        public IActionResult Show(int? id, int? EchoId, string? Content)
+        [Authorize(Roles = "Admin")]
+        public ActionResult DeleteAdmin(int id)
         {
-            int echoId = id ?? EchoId ?? 0;
+            Echo? echo = db.Echoes.Find(id);
 
-            if (echoId == 0)
-            {
-                TempData["message"] = "Invalid Echo ID!";
-                TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
-            }
-
-            // Obține ID-ul utilizatorului deleted pentru a-l exclude
-            var deletedUserId = db.Users
-                .Where(u => u.UserName == "deleted")
-                .Select(u => u.Id)
-                .FirstOrDefault() ?? string.Empty;
-
-            Echo? parentEcho = db.Echoes
-                .Where(e => e.Id == echoId && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza echo-urile sterse
-                .FirstOrDefault();
-
-            if (parentEcho is null)
+            if (echo is null)
             {
                 TempData["message"] = "Echo does not exist!";
                 TempData["type"] = "alert-warning";
                 return RedirectToAction("Index");
             }
 
-            if (string.IsNullOrWhiteSpace(Content))
+            if (User.IsInRole("Admin"))
             {
-                TempData["message"] = "Comment content cannot be empty!";
-                TempData["type"] = "alert-warning";
-             
+                RemoveParentEcho(echo);
 
-                int originalPostId = GetOriginalEchoId(parentEcho);
-                return RedirectToAction("Show", new { id = originalPostId });
+                try
+                {
+                    db.SaveChanges();
+                    TempData["message"] = "Echo was deleted!";
+                    TempData["type"] = "alert-info";
+                    return RedirectToAction("Index");
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["message"] = "Echo could not be deleted...";
+                    TempData["type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+            }
+            else
+            {
+                TempData["message"] = "You do not have the necessary permissions to delete this echo.";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult MarkAllDeletedAdmin()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var echoes = db.Echoes.Where(ech => !ech.IsRemoved).OrderByDescending(ech => ech.DateCreated).ToList();
+
+                if (echoes is null)
+                {
+                    TempData["message"] = "There are no echoes not marked as deleted!";
+                    TempData["type"] = "alert-warning";
+                    return RedirectToAction("Index");
+                }
+
+                var deletedUser = db.Users.Where(u => u.UserName == "deleted").FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["message"] = "Deleted user not found!";
+                    TempData["type"] = "alert-danger";
+                    return RedirectToAction("Index");
+                }
+
+                foreach (var echo in echoes)
+                {
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+
+                    try
+                    {
+                        db.SaveChanges();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        TempData["message"] = "Echo could not be deleted...";
+                        TempData["type"] = "alert-danger";
+                        return RedirectToAction("IndexAdmin");
+                    }
+                }
+            }
+            else
+            {
+                TempData["message"] = "You do not have the necessary permissions to delete all echoes.";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
             }
 
-            // Create a new Echo as a comment
-            Echo comment = new Echo
-            {
-                Content = Content,
-                CommParentId = echoId,
-                UserId = _userManager.GetUserId(User) ?? string.Empty,
-                DateCreated = DateTime.Now,
-                FlockId = parentEcho.FlockId // Inherit flock from parent
-            };
-
-            db.Echoes.Add(comment);
-            db.SaveChanges();
-
-            TempData["message"] = "Comment added successfully!";
-            TempData["type"] = "alert-success";
-
-            SetAccessRights();
-
-            // Redirect to the original post
-            int originalEchoId = GetOriginalEchoId(parentEcho);
-            return RedirectToAction("Show", originalEchoId);
+            TempData["message"] = "All non-\"deleted\" Echoes were marked as deleted!";
+            TempData["type"] = "alert-info";
+            return RedirectToAction("IndexAdmin");
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult DeleteAllAdmin()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var echoes = db.Echoes.OrderByDescending(ech => ech.DateCreated).ToList();
+
+                if (echoes is null)
+                {
+                    TempData["message"] = "There are no Echoes in the database!";
+                    TempData["type"] = "alert-warning";
+                    return RedirectToAction("Index");
+                }
+            
+                foreach (var echo in echoes)
+                {
+                    RemoveParentEcho(echo);
+
+                    try
+                    {
+                        db.SaveChanges();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        TempData["message"] = "Echo could not be deleted...";
+                        TempData["type"] = "alert-danger";
+                        return RedirectToAction("IndexAdmin");
+                    }
+                }
+            }
+            else
+            {
+                TempData["message"] = "You do not have the necessary permissions to delete all echoes.";
+                TempData["type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
+            }
+
+            TempData["message"] = "All Echoes have been permanently deleted!";
+            TempData["type"] = "alert-info";
+            return RedirectToAction("IndexAdmin");
+        }
+
 
         // other methods
         // Conditii de afisare pt butoanele de afisare / stergere din views
@@ -605,6 +807,55 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
             }
+        }
+
+        private void RemoveParentEcho(Echo echo)
+        {
+            // Set CommParent to null for children
+            var commChildren = db.Echoes.Where(ech => ech.CommParentId == echo.Id).ToList();
+
+            foreach (var comm in commChildren)
+            {
+                comm.CommParentId = null;
+                comm.CommParent = null;
+            }
+
+            // Set AmpParent to null for children
+            var ampChildren = db.Echoes.Where(ech => ech.AmpParentId == echo.Id).ToList();
+
+            foreach (var amp in ampChildren)
+            {
+                amp.AmpParentId = null;
+                amp.AmpParent = null;
+            }
+
+            // Remove all Interaction columns that use this echo
+            var interactions = db.Interactions.Where(i => i.EchoId == echo.Id).ToList();
+
+            foreach (var inter in interactions)
+            {
+                db.Interactions.Remove(inter);
+            }
+
+            string? folder = null;
+            if (echo.Att1 != null)
+            {
+                folder = echo.Att1.Remove(echo.Att1.LastIndexOf('/'));
+                DeletePhysicalFile(echo.Att1);
+            }
+            if (echo.Att2 != null)
+            {
+                folder = echo.Att2.Remove(echo.Att2.LastIndexOf('/'));
+                DeletePhysicalFile(echo.Att2);
+            }
+
+            if (folder != null)
+            {
+                Directory.Delete(Path.Combine(_env.WebRootPath, folder.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())));
+            }
+
+            // Remove parent from db
+            db.Echoes.Remove(echo);
         }
 
         // Stergerea fisierului din wwwroot

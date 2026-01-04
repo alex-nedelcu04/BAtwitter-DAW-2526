@@ -77,7 +77,10 @@
         @if ((Model.Id == ViewBag.CurrentUser || ViewBag.IsAdmin) && Model.AccountStatus != "deleted")
         {
             <div class="d-flex flex-row justify-content-between mt-3">
-                <a class="btn btn-success" asp-controller="UserProfiles" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Profile</a>
+                @if (Model.Id == ViewBag.CurrentUser)
+                {
+                    <a class="btn btn-success" asp-controller="UserProfiles" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Profile</a>
+                }
                 <form method="post" asp-controller="UserProfiles" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                     <button class="btn btn-danger" type="submit">Delete Profile</button>
                 </form>

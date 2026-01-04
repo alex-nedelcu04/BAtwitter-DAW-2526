@@ -12,7 +12,32 @@
 
                 @if (Model.CommParentId != null)
                 {
+                    <div class="mb-3 user-select-none">
+                        Parent Echo
+                    </div>
+                    <div style="border-left: 2px solid #ddd">
+                        <div class="ms-4">
+                            <partial name="AmplifyWindow" model="@ViewBag.Parent" />
+                        </div>
+                    </div>
+
                     <input type="hidden" asp-for="CommParentId" />
+                    @if (Model.FlockId != null)
+                    {
+                        <input type="hidden" asp-for="FlockId" />
+                        <div class="mb-3 user-select-none">
+                            Flock: @ViewBag.Flock.Name
+                        </div>
+                    }
+                }
+                else if (Model.AmpParentId != null)
+                {
+                    <div class="mb-3 user-select-none">
+                        Amplified Echo
+                    </div>
+                    <partial name="AmplifyWindow" model="@ViewBag.Parent" />
+
+                    <input type="hidden" asp-for="AmpParentId" />
                     @if (Model.FlockId != null)
                     {
                         <input type="hidden" asp-for="FlockId" />
