@@ -1,4 +1,4 @@
-﻿@model BAtwitter_DAW_2526.Models.Echo
+@model BAtwitter_DAW_2526.Models.Echo
 @using System.IO
 
 @{
@@ -75,7 +75,7 @@
             </div>
 
             <div class="text-end small text-muted">
-                @* "edited at" doar dacă a fost editat *@
+                @* "edited at" doar daca a fost editat *@
                 @if (Model.DateEdited.HasValue && Model.DateEdited.Value > Model.DateCreated)
                 {
                     <div class="text-muted text-end">
@@ -93,7 +93,7 @@
             }
         </div>
 
-        <!-- ATAȘAMENTE -->
+        <!-- ATA?AMENTE -->
         @{
             var attCount = Convert.ToInt32(!string.IsNullOrEmpty(Model.Att1)) + Convert.ToInt32(!string.IsNullOrEmpty(Model.Att2));
         }
@@ -115,7 +115,7 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg1)
                             {
-                                <!-- CLICK PE POZĂ => REDIRECTEAZĂ ÎN ACELAȘI TAB -->
+                                <!-- CLICK PE POZA => REDIRECTEAZA �N ACELA?I TAB -->
                                 <a href="@Model.Att1" class="d-block w-100 h-100">
                                     <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
@@ -147,7 +147,7 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg2)
                             {
-                                <!-- CLICK PE POZĂ => REDIRECTEAZĂ ÎN ACELAȘI TAB -->
+                                <!-- CLICK PE POZA => REDIRECTEAZA �N ACELA?I TAB -->
                                 <a href="@Model.Att2" class="d-block w-100 h-100">
                                     <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
@@ -179,7 +179,7 @@
             </div>
         </div>
         
-        <!-- FOOTER: interacțiuni + created at -->
+        <!-- FOOTER: interac?iuni + created at -->
         <div class="d-flex justify-content-between align-items-center mt-2">
 
             <div class="small text-muted d-flex align-items-center flex-wrap">
@@ -252,85 +252,3 @@
         }
     </div>
 </div>
-
-<script>
-    (function() {
-        // Handle AJAX form submissions for interaction buttons
-        document.querySelectorAll('.interaction-form').forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const form = this;
-                const echoId = form.getAttribute('data-echo-id');
-                const interactionType = form.getAttribute('data-interaction-type');
-                const button = form.querySelector('button[type="submit"]');
-                const icon = button.querySelector('i');
-                const countSpan = button.querySelector('span');
-                
-                // Disable button during request
-                button.disabled = true;
-                
-                // Determine the action URL based on interaction type
-                let actionUrl = '';
-                if (interactionType === 'like') {
-                    actionUrl = '@Url.Action("New_Like", "Interactions")';
-                } else if (interactionType === 'rebound') {
-                    actionUrl = '@Url.Action("New_Rebound", "Interactions")';
-                } else if (interactionType === 'bookmark') {
-                    actionUrl = '@Url.Action("New_Bookmark", "Interactions")';
-                }
-                
-                // Get anti-forgery token
-                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
-                
-                // Make AJAX request
-                fetch(actionUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    credentials: 'include',
-                    body: 'EchoId=' + echoId + '&__RequestVerificationToken=' + encodeURIComponent(token)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update UI based on interaction type
-                        if (interactionType === 'like') {
-                            if (data.isLiked) {
-                                icon.classList.remove('bi-heart');
-                                icon.classList.add('bi-heart-fill', 'text-danger');
-                            } else {
-                                icon.classList.remove('bi-heart-fill', 'text-danger');
-                                icon.classList.add('bi-heart');
-                            }
-                            countSpan.textContent = data.likesCount;
-                        } else if (interactionType === 'rebound') {
-                            if (data.isRebounded) {
-                                icon.classList.add('text-success');
-                            } else {
-                                icon.classList.remove('text-success');
-                            }
-                            countSpan.textContent = data.reboundCount;
-                        } else if (interactionType === 'bookmark') {
-                            if (data.isBookmarked) {
-                                icon.classList.remove('bi-bookmark');
-                                icon.classList.add('bi-bookmark-fill', 'text-primary');
-                            } else {
-                                icon.classList.remove('bi-bookmark-fill', 'text-primary');
-                                icon.classList.add('bi-bookmark');
-                            }
-                            countSpan.textContent = data.bookmarksCount;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                })
-                .finally(() => {
-                    button.disabled = false;
-                });
-            });
-        });
-    })();
-</script>
