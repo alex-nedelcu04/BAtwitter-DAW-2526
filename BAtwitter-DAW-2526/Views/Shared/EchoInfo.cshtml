@@ -4,6 +4,19 @@
 @{
     string path = Context.Request.Path.Value ?? "";
     bool showButtons = path.Contains("Echoes/Show");
+
+    // Check if current user has liked/rebounded this echo
+    bool isLiked = false, isRebounded = false, isBookmarked = false;
+    if (ViewBag.CurrentUser != null && Model.Interactions != null)
+    {
+        var inter = Model.Interactions.FirstOrDefault(i => i.UserId == ViewBag.CurrentUser);
+        if (inter != null)
+        {
+            isLiked = inter.Liked;
+            isRebounded = inter.Rebounded;
+            isBookmarked = inter.Bookmarked;
+        }
+    }
 }
 
 
@@ -156,28 +169,61 @@
             </div>
         }
 
+        <div class="d-flex justify-content-center w-100">
+            <div style="width: 80%">
+                @if (Model.AmpParent != null)
+                {
+                    <partial name="AmplifyWindow" model="@Model.AmpParent" />
+                }
+                <partial name="AmplifyWindow" model="@Model" />
+            </div>
+        </div>
+        
         <!-- FOOTER: interacțiuni + created at -->
         <div class="d-flex justify-content-between align-items-center mt-2">
 
             <div class="small text-muted d-flex align-items-center flex-wrap">
                 <span class="me-3 d-flex align-items-center">
-                    <i class="bi bi-chat me-1"></i> @Model.CommentsCount
+                    <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id">
+                        <i class="bi bi-chat me-1"></i> @Model.CommentsCount
+                    </a>
+                    <form asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id" class="d-inline">
+                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                            
+                        </button>
+                    </form>
+                    
                 </span>
 
                 <span class="me-3 d-flex align-items-center">
-                    <i class="bi bi-arrow-repeat me-1"></i> @Model.ReboundCount
+                    <form method="post" asp-controller="Interactions" asp-action="New_Rebound" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="rebound">
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
+                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                            <i class="bi bi-arrow-repeat me-1 rebound-icon @(isRebounded ? "text-success" : "")"></i> <span class="rebound-count">@Model.ReboundCount</span>
+                        </button>
+                    </form>
                 </span>
 
-                <span class="me-3 d-flex align-items-center">
+                <span class="me-3 d-flex align-items-center"> <!-- NO -->
                     <i class="bi bi-megaphone me-1"></i> @Model.AmplifierCount
                 </span>
 
-                <span class="me-3 d-flex align-items-center">
-                    <i class="bi bi-bookmark me-1"></i> @Model.BookmarksCount
+                <span class="me-3 d-flex align-items-center"> <!-- NOT FINISHED ADD METHOD IN USERPROFILE -->
+                    <form method="post" asp-controller="Interactions" asp-action="New_Bookmark" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="bookmark">
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
+                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                            <i class="bi bookmark-icon @(isBookmarked ? "bi-bookmark-fill text-primary" : "bi-bookmark") me-1"></i> <span class="bookmark-count">@Model.BookmarksCount</span>
+                        </button>
+                    </form>
                 </span>
 
-                <span class="d-flex align-items-center">
-                    <i class="bi bi-heart me-1"></i> @Model.LikesCount
+                <span class="me-3 d-flex align-items-center">
+                    <form method="post" asp-controller="Interactions" asp-action="New_Like" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="like">
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
+                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                            <i class="bi like-icon @(isLiked ? "bi-heart-fill text-danger" : "bi-heart") me-1"></i> <span class="like-count">@Model.LikesCount</span>
+                        </button>
+                    </form>
                 </span>
             </div>
 
@@ -206,3 +252,85 @@
         }
     </div>
 </div>
+
+<script>
+    (function() {
+        // Handle AJAX form submissions for interaction buttons
+        document.querySelectorAll('.interaction-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const form = this;
+                const echoId = form.getAttribute('data-echo-id');
+                const interactionType = form.getAttribute('data-interaction-type');
+                const button = form.querySelector('button[type="submit"]');
+                const icon = button.querySelector('i');
+                const countSpan = button.querySelector('span');
+                
+                // Disable button during request
+                button.disabled = true;
+                
+                // Determine the action URL based on interaction type
+                let actionUrl = '';
+                if (interactionType === 'like') {
+                    actionUrl = '@Url.Action("New_Like", "Interactions")';
+                } else if (interactionType === 'rebound') {
+                    actionUrl = '@Url.Action("New_Rebound", "Interactions")';
+                } else if (interactionType === 'bookmark') {
+                    actionUrl = '@Url.Action("New_Bookmark", "Interactions")';
+                }
+                
+                // Get anti-forgery token
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                
+                // Make AJAX request
+                fetch(actionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    credentials: 'include',
+                    body: 'EchoId=' + echoId + '&__RequestVerificationToken=' + encodeURIComponent(token)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI based on interaction type
+                        if (interactionType === 'like') {
+                            if (data.isLiked) {
+                                icon.classList.remove('bi-heart');
+                                icon.classList.add('bi-heart-fill', 'text-danger');
+                            } else {
+                                icon.classList.remove('bi-heart-fill', 'text-danger');
+                                icon.classList.add('bi-heart');
+                            }
+                            countSpan.textContent = data.likesCount;
+                        } else if (interactionType === 'rebound') {
+                            if (data.isRebounded) {
+                                icon.classList.add('text-success');
+                            } else {
+                                icon.classList.remove('text-success');
+                            }
+                            countSpan.textContent = data.reboundCount;
+                        } else if (interactionType === 'bookmark') {
+                            if (data.isBookmarked) {
+                                icon.classList.remove('bi-bookmark');
+                                icon.classList.add('bi-bookmark-fill', 'text-primary');
+                            } else {
+                                icon.classList.remove('bi-bookmark-fill', 'text-primary');
+                                icon.classList.add('bi-bookmark');
+                            }
+                            countSpan.textContent = data.bookmarksCount;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+            });
+        });
+    })();
+</script>

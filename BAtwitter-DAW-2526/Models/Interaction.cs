@@ -8,6 +8,7 @@
         public bool Liked { get; set; } = false;
         public bool Bookmarked { get; set; } = false;
         public bool Rebounded { get; set; } = false;
+        public DateTime? LikedDate { get; set; }
         public DateTime? ReboundedDate { get; set; }
         public DateTime? BookmarkedDate { get; set; }
 

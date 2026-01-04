@@ -16,10 +16,12 @@
                     @if (Model.FlockId != null)
                     {
                         <input type="hidden" asp-for="FlockId" />
+                        <div class="mb-3 user-select-none">
+                            Flock: @ViewBag.Flock.Name
+                        </div>
                     }
                 }
-
-                @if (Model.CommParentId == null)
+                else
                 {
                     <div class="mb-3">
                         <label asp-for="FlockId" class="form-label">Flock (Optional)</label>
@@ -28,15 +30,6 @@
                         </select>
                         <span asp-validation-for="FlockId" class="text-danger"></span>
                     </div>
-                }
-                else
-                {
-                    @if (Model.FlockId != null)
-                    {
-                        <div class="mb-3 user-select-none">
-                            Flock: @ViewBag.Flock.Name
-                        </div>
-                    }
                 }
 
                 <div class="mb-3">
