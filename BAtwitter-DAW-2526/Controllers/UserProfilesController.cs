@@ -198,12 +198,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.PfpLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(pfp.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -221,12 +221,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.BannerLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(banner.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -415,6 +415,252 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
 
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult IndexAdmin()
+        {
+            var userProfiles = db.UserProfiles
+                .Include(up => up.ApplicationUser)
+                .OrderByDescending(up => up.JoinDate);
+
+            ViewBag.UserProfiles = userProfiles;
+
+            if (TempData.ContainsKey("userprofile-message"))
+            {
+                ViewBag.Message = TempData["userprofile-message"];
+                ViewBag.Type = TempData["userprofile-type"];
+            }
+
+            SetAccessRights();
+
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult MarkAsDeletedAdmin(string id)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                UserProfile? userProfile = db.UserProfiles
+                    .Include(up => up.ApplicationUser)
+                    .Where(up => up.Id == id)
+                    .FirstOrDefault();
+
+                if (userProfile is null)
+                {
+                    TempData["userprofile-message"] = "User profile does not exist!";
+                    TempData["userprofile-type"] = "alert-warning";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["userprofile-message"] = "Deleted user not found!";
+                    TempData["userprofile-type"] = "alert-danger";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                // Marchează contul ca șters
+                userProfile.AccountStatus = "deleted";
+
+                // Atribuie toate echo-urile utilizatorului la utilizatorul deleted
+                var userEchoes = db.Echoes
+                    .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                    .ToList();
+
+                foreach (var echo in userEchoes)
+                {
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                }
+
+                var username = userProfile.ApplicationUser?.UserName;
+                var referer = Request.Headers["Referer"].ToString();
+                var isFromShow = referer.Contains("UserProfiles/Show");
+
+                try
+                {
+                    db.SaveChanges();
+                    TempData["userprofile-message"] = "User profile was marked as deleted!";
+                    TempData["userprofile-type"] = "alert-info";
+                    
+                    if (isFromShow && !string.IsNullOrEmpty(username))
+                    {
+                        return RedirectToAction("Show", new { username = username });
+                    }
+                    return RedirectToAction("IndexAdmin");
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["userprofile-message"] = "User profile could not be marked as deleted...";
+                    TempData["userprofile-type"] = "alert-danger";
+                    
+                    if (isFromShow && !string.IsNullOrEmpty(username))
+                    {
+                        return RedirectToAction("Show", new { username = username });
+                    }
+                    return RedirectToAction("IndexAdmin");
+                }
+            }
+            else
+            {
+                TempData["userprofile-message"] = "You do not have the necessary permissions to mark this user profile as deleted.";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteAdmin(string id)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                UserProfile? userProfile = db.UserProfiles
+                    .Include(up => up.ApplicationUser)
+                    .Where(up => up.Id == id)
+                    .FirstOrDefault();
+
+                if (userProfile is null)
+                {
+                    TempData["userprofile-message"] = "User profile does not exist!";
+                    TempData["userprofile-type"] = "alert-warning";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                var username = userProfile.ApplicationUser?.UserName;
+                var referer = Request.Headers["Referer"].ToString();
+                var isFromShow = referer.Contains("UserProfiles/Show");
+
+                // Get deleted user for reassigning echoes
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                if (deletedUser == null)
+                {
+                    TempData["userprofile-message"] = "Deleted user not found!";
+                    TempData["userprofile-type"] = "alert-danger";
+                    return RedirectToAction("IndexAdmin");
+                }
+
+                try
+                {
+              
+
+                    var flockUsers = db.FlockUsers.Where(fu => fu.UserId == id).ToList();
+                    db.FlockUsers.RemoveRange(flockUsers);
+
+                    var interactions = db.Interactions.Where(i => i.UserId == id).ToList();
+                    db.Interactions.RemoveRange(interactions);
+
+                    var sentRelations = db.Relations.Where(r => r.SenderId == id).ToList();
+                    var receivedRelations = db.Relations.Where(r => r.ReceiverId == id).ToList();
+                    db.Relations.RemoveRange(sentRelations);
+                    db.Relations.RemoveRange(receivedRelations);
+
+                    var adminFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
+                    foreach (var flock in adminFlocks)
+                    {
+                        var flockEchoes = db.Echoes
+                            .Where(e => e.FlockId == flock.Id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                            .ToList();
+
+                        foreach (var echo in flockEchoes)
+                        {
+                            AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                        }
+
+                        await db.SaveChangesAsync();
+
+                        db.Flocks.Remove(flock);
+                    }
+                    var userEchoes = db.Echoes
+                        .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                        .ToList();
+
+                    foreach (var echo in userEchoes)
+                    {
+                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    }
+
+                    await db.SaveChangesAsync();
+
+                    db.UserProfiles.Remove(userProfile);
+                    await db.SaveChangesAsync();
+
+                    var applicationUser = await _userManager.FindByIdAsync(id);
+                    if (applicationUser != null)
+                    {
+                        await _userManager.DeleteAsync(applicationUser);
+                    }
+
+                    if (!string.IsNullOrEmpty(userProfile.PfpLink) && !userProfile.PfpLink.Contains("user_default_pfp"))
+                    {
+                        DeletePhysicalFile(userProfile.PfpLink);
+                    }
+
+                    if (!string.IsNullOrEmpty(userProfile.BannerLink) && !userProfile.BannerLink.Contains("banner_default"))
+                    {
+                        DeletePhysicalFile(userProfile.BannerLink);
+                    }
+
+                    var userDirectory = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                    if (Directory.Exists(userDirectory))
+                    {
+                        try
+                        {
+                            Directory.Delete(userDirectory, recursive: true);
+                        }
+                        catch (DirectoryNotFoundException)
+                        {
+                        }
+                        catch (IOException ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Could not delete directory {userDirectory}: {ex.Message}");
+                        }
+                    }
+
+                    TempData["userprofile-message"] = "User profile was permanently deleted!";
+                    TempData["userprofile-type"] = "alert-info";
+                    
+
+                    return RedirectToAction("IndexAdmin");
+                }
+                catch (DbUpdateException ex)
+                {
+                    TempData["userprofile-message"] = $"User profile could not be deleted: {ex.Message}";
+                    TempData["userprofile-type"] = "alert-danger";
+                    
+                    if (isFromShow && !string.IsNullOrEmpty(username))
+                    {
+                        return RedirectToAction("Show", new { username = username });
+                    }
+                    return RedirectToAction("IndexAdmin");
+                }
+                catch (Exception ex)
+                {
+                    TempData["userprofile-message"] = $"An error occurred while deleting user profile: {ex.Message}";
+                    TempData["userprofile-type"] = "alert-danger";
+                    
+                    if (isFromShow && !string.IsNullOrEmpty(username))
+                    {
+                        return RedirectToAction("Show", new { username = username });
+                    }
+                    return RedirectToAction("IndexAdmin");
+                }
+            }
+            else
+            {
+                TempData["userprofile-message"] = "You do not have the necessary permissions to delete this user profile.";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("IndexAdmin");
+            }
+        }
 
         // Other Methods
 

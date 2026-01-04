@@ -3,7 +3,8 @@
 @{
     string path = Context.Request.Path.Value ?? "";
     bool showRecent = !path.Contains("Users/");
-
+    bool isIndexAdmin = path.Contains("UserProfiles/IndexAdmin");
+    bool isShow = path.Contains("UserProfiles/Show");
 }
 
 <div class="card shadow-sm mb-4 userprofile-card" data-userprofile-url="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser?.UserName })" style="cursor: pointer;">
@@ -74,7 +75,30 @@
             </div>
         }
 
-        @if ((Model.Id == ViewBag.CurrentUser || ViewBag.IsAdmin) && Model.AccountStatus != "deleted")
+        @if ((isIndexAdmin || isShow) && ViewBag.IsAdmin)
+        {
+            @if (Model.AccountStatus == "deleted")
+            {
+                <div class="d-flex flex-row justify-content-end mt-3">
+                    <form method="post" asp-controller="UserProfiles" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-danger" type="submit">Permanently Delete User Profile</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-row justify-content-between mt-3">
+                    <form method="post" asp-controller="UserProfiles" asp-action="MarkAsDeletedAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-warning" type="submit">Mark User Profile as Deleted</button>
+                    </form>
+
+                    <form method="post" asp-controller="UserProfiles" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-danger" type="submit">Permanently Delete User Profile</button>
+                    </form>
+                </div>
+            }
+        }
+        else if ((Model.Id == ViewBag.CurrentUser || ViewBag.IsAdmin) && Model.AccountStatus != "deleted")
         {
             <div class="d-flex flex-row justify-content-between mt-3">
                 @if (Model.Id == ViewBag.CurrentUser)

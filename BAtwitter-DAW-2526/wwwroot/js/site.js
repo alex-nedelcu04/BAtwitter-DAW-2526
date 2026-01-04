@@ -300,6 +300,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (type === 'rebound') {
                     serverState.isRebounded = data.isRebounded;
                     serverState.reboundCount = data.reboundCount;
+                    
+                    // Reload feed if we're on the Index page (both when adding and removing rebound)
+                    const currentPath = window.location.pathname;
+                    if (currentPath === '/Echoes/Index' || currentPath === '/Echoes' || currentPath === '/Echoes/') {
+                        // Reload the page to update the feed (show or hide the rebound)
+                        window.location.reload();
+                        return;
+                    }
                 } else if (type === 'bookmark') {
                     serverState.isBookmarked = data.isBookmarked;
                     serverState.bookmarksCount = data.bookmarksCount;

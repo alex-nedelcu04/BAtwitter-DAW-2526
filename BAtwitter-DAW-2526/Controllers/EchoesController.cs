@@ -23,7 +23,6 @@ namespace BAtwitter_DAW_2526.Controllers
             _userManager = usrm;
             _env = env;
         }
-
         // [HttpGet] care se executa implicit
         [Authorize(Roles = "User,Admin")]
         public IActionResult Index()
@@ -33,18 +32,70 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Select(u => u.Id)
                 .FirstOrDefault() ?? string.Empty;
 
-            var echoes = db.Echoes
-                            .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId) // Filtreaza echo-urile sterse
-                            .Include(ech => ech.User)
-                                .ThenInclude(u => u!.ApplicationUser)
-                            .Include(ech => ech.AmpParent)
-                                .ThenInclude(ech => ech!.User)
-                                    .ThenInclude(u => u!.ApplicationUser)
-                            .Include(ech => ech.Interactions)
-                            .Include(ech => ech.Flock)
-                            .OrderByDescending(ech => ech.DateCreated);
+            var currentUserId = _userManager.GetUserId(User);
 
-            ViewBag.Echoes = echoes;
+            // Echo-uri normale (nu sunt comentarii)
+            var normalEchoes = db.Echoes
+                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null)
+                                .Include(ech => ech.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
+                                .Include(ech => ech.AmpParent)
+                                    .ThenInclude(ech => ech!.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
+                                .Include(ech => ech.Interactions!)
+                                    .ThenInclude(i => i.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
+                                .Include(ech => ech.Flock)
+                                .ToList();
+
+            // lista care include echo-urile normale și echo-urile cu rebound-uri
+            var feedItems = new List<(Echo Echo, UserProfile? ReboundUser)>();
+
+  
+            foreach (var echo in normalEchoes)
+            {
+                feedItems.Add((echo, null));
+            }
+
+            // echo-uri cu rebound + info user care a facut rebound
+            var reboundInteractions = db.Interactions
+                .Where(i => i.Rebounded &&
+                            i.Echo != null &&
+                            !i.Echo.IsRemoved &&
+                            i.Echo.UserId != deletedUserId &&
+                            i.Echo.CommParentId == null)
+                .Include(i => i.Echo!)
+                    .ThenInclude(e => e!.User)
+                        .ThenInclude(u => u!.ApplicationUser)
+                .Include(i => i.Echo!.AmpParent)
+                    .ThenInclude(ech => ech!.User)
+                        .ThenInclude(u => u!.ApplicationUser)
+                .Include(i => i.Echo!.Interactions!)
+                    .ThenInclude(inter => inter.User)
+                        .ThenInclude(u => u!.ApplicationUser)
+                .Include(i => i.Echo!.Flock)
+                .Include(i => i.User!)
+                    .ThenInclude(u => u!.ApplicationUser)
+                .OrderByDescending(i => i.ReboundedDate)
+                .ToList();
+
+            foreach (var interaction in reboundInteractions)
+            {
+                if (interaction.Echo != null && interaction.User != null)
+                {
+                    feedItems.Add((interaction.Echo, interaction.User));
+                }
+            }
+
+            // sortare dupa data de creare a echo-ului sau data rebound-ului (dacă e rebound)
+            var sortedFeedItems = feedItems
+                .OrderByDescending(item => item.ReboundUser != null
+                    ? item.Echo.Interactions?.FirstOrDefault(i => i.UserId == item.ReboundUser.Id && i.Rebounded)?.ReboundedDate ?? item.Echo.DateCreated
+                    : item.Echo.DateCreated)
+                .ToList();
+
+            ViewBag.FeedItems = sortedFeedItems;
+            ViewBag.CurrentUser = currentUserId;
 
             if (TempData.ContainsKey("message"))
             {
@@ -315,11 +366,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -331,11 +382,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -494,11 +545,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -511,11 +562,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -837,24 +888,53 @@ namespace BAtwitter_DAW_2526.Controllers
                 db.Interactions.Remove(inter);
             }
 
-            string? folder = null;
             if (echo.Att1 != null)
             {
-                folder = echo.Att1.Remove(echo.Att1.LastIndexOf('/'));
                 DeletePhysicalFile(echo.Att1);
             }
             if (echo.Att2 != null)
             {
-                folder = echo.Att2.Remove(echo.Att2.LastIndexOf('/'));
                 DeletePhysicalFile(echo.Att2);
+            }
+
+            string? folder = null;
+            if (echo.Att1 != null)
+            {
+                var lastSlashIndex = echo.Att1.LastIndexOf('/');
+                if (lastSlashIndex > 0)
+                {
+                    folder = echo.Att1.Substring(0, lastSlashIndex);
+                }
+            }
+            else if (echo.Att2 != null)
+            {
+                var lastSlashIndex = echo.Att2.LastIndexOf('/');
+                if (lastSlashIndex > 0)
+                {
+                    folder = echo.Att2.Substring(0, lastSlashIndex);
+                }
             }
 
             if (folder != null)
             {
-                Directory.Delete(Path.Combine(_env.WebRootPath, folder.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())));
+                var folderPath = Path.Combine(_env.WebRootPath, folder.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                if (Directory.Exists(folderPath))
+                {
+                    try
+                    {
+                        Directory.Delete(folderPath, recursive: true);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                      
+                    }
+                    catch (IOException ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Could not delete directory {folderPath}: {ex.Message}");
+                    }
+                }
             }
 
-            // Remove parent from db
             db.Echoes.Remove(echo);
         }
 

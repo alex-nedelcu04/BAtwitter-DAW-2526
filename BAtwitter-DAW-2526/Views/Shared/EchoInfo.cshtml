@@ -1,4 +1,4 @@
-@model BAtwitter_DAW_2526.Models.Echo
+ï»¿@model BAtwitter_DAW_2526.Models.Echo
 @using System.IO
 
 @{
@@ -65,7 +65,7 @@
                         </span>
                     }
 
-                    
+
                 </div>
 
                 @if (Model.Flock != null)
@@ -133,7 +133,7 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg1)
                             {
-                                <!-- CLICK PE POZA => REDIRECTEAZA ÎN ACELA?I TAB -->
+                                <!-- CLICK PE POZA => REDIRECTEAZA ï¿½N ACELA?I TAB -->
                                 <a href="@Model.Att1" class="d-block w-100 h-100">
                                     <img src="@Model.Att1" alt="attachment 1" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
@@ -165,7 +165,7 @@
                         <div class="ratio ratio-16x9 bg-light rounded overflow-hidden">
                             @if (isImg2)
                             {
-                                <!-- CLICK PE POZA => REDIRECTEAZA ÎN ACELA?I TAB -->
+                                <!-- CLICK PE POZA => REDIRECTEAZA ï¿½N ACELA?I TAB -->
                                 <a href="@Model.Att2" class="d-block w-100 h-100">
                                     <img src="@Model.Att2" alt="attachment 2" class="w-100 h-100" style="object-fit: cover;" />
                                 </a>
@@ -284,7 +284,7 @@
                     </form>
                 </div>
             }
-        } 
+        }
         else
         {
             @if ((Model.UserId == ViewBag.CurrentUser || ViewBag.IsAdmin) && showButtons && !Model.IsRemoved)

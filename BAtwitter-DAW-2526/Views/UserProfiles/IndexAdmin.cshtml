@@ -1,0 +1,12 @@
+﻿<h2 class="text-center">List of User Profiles</h2>
+<br />
+
+@if (ViewBag.Message != null)
+{
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+@foreach (var userProfile in ViewBag.UserProfiles)
+{
+    <partial name="UserProfileInfo" model="userProfile" />
+}
