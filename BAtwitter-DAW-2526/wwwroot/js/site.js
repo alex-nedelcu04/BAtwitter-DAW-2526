@@ -364,5 +364,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentUrl = window.location.href;
         // This is a simple check - you might want to enhance this
     });
+
+    
+        const STORAGE_KEY = "theme";
+        const root = document.documentElement;
+        const toggle = document.getElementById("themeToggle");
+        const icon = document.getElementById("themeIcon");
+
+        function applyTheme(theme) {
+            root.setAttribute("data-bs-theme", theme);
+            if (toggle) toggle.checked = (theme === "dark");
+            if (icon) icon.className = (theme === "dark") ? "bi bi-moon-stars" : "bi bi-sun" ;
+        }
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+        applyTheme(saved || (prefersDark ? "dark" : "light"));
+
+        toggle?.addEventListener("change", function () {
+            const theme = toggle.checked ? "dark" : "light";
+            localStorage.setItem(STORAGE_KEY, theme);
+            applyTheme(theme);
+        });
+
 });
 

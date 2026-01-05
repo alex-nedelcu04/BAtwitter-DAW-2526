@@ -4,76 +4,139 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - BAtwitter_DAW_2526</title>
+
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BAtwitter-DAW-2526.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/Resources/Images/logo_transparent_v11_fit.png" style="height: clamp(6.4vh, 35px, 60px); aspect-ratio: 1313/407; width: auto; object-fit: cover;" alt="Site Logo">
+
+<body class="app-body">
+
+    <!-- LEFT SIDEBAR (always visible) -->
+    <aside class="app-sidebar bg-body-tertiary border-end">
+        <div class="sidebar-header p-3">
+            <a class="d-inline-flex align-items-center text-decoration-none"
+               asp-area="" asp-controller="Home" asp-action="Index">
+                <img src="~/Resources/Images/logo_transparent_v11_fit.png"
+                     style="height: clamp(6.4vh, 35px, 60px); aspect-ratio: 1313/407; width:auto; object-fit:cover;"
+                     alt="Site Logo">
+            </a>
+        </div>
+
+        <!-- Always-open “dropdown” list -->
+        <ul class="nav flex-column p-2 gap-1 sidebar-links">
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house me-2"></i>Home
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="Index">
+                    <i class="bi bi-list-ul me-2"></i>Main Feed
+                </a>
+            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Echoes" asp-action="Index">Main Feed</a>
-                        </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="New">
+                    <i class="bi bi-pencil-square me-2"></i>Send Echo
+                </a>
+            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Echoes" asp-action="New">Send Echo</a>
-                        </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Flocks" asp-action="Index">
+                    <i class="bi bi-people me-2"></i>Flock Feed
+                </a>
+            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Flocks" asp-action="Index">Flock Feed</a>
-                        </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Flocks" asp-action="New">
+                    <i class="bi bi-plus-circle me-2"></i>Create Flock
+                </a>
+            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Flocks" asp-action="New">Create Flock</a>
-                        </li>
+            @if (User.IsInRole("User") || User.IsInRole("Admin"))
+            {
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="Bookmarks">
+                        <i class="bi bi-bookmark-heart me-2"></i>View Bookmarks
+                    </a>
+                </li>
+            }
 
-                        @if (User.IsInRole("User") || User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Echoes" asp-action="Bookmarks">View Bookmarks</a>
-                            </li>
-                        }
+            @if (User.IsInRole("Admin"))
+            {
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="AdminInterface">
+                        <i class="bi bi-shield-lock me-2"></i>Admin Interface
+                    </a>
+                </li>
+            }
+        </ul>
 
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Echoes" asp-action="AdminInterface">Admin Interface</a>
-                            </li>
-                        }
-                    </ul>
-                    <partial name="_LoginPartial" />
+        <!-- BOTTOM-LEFT user area (fixed visually by sidebar layout) -->
+        <div class="sidebar-user border-top p-2">
+            <!-- Keep your existing user rendering logic -->
+            <div class="user-slot w-100">
+                <partial name="_LoginPartial" />
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- TOP BAR (fixed) with search on the right -->
+    <header class="app-topbar bg-body-tertiary border-bottom">
+        <div class="h-100 px-3 d-flex align-items-center justify-content-between">
+            <!-- Use input-group like in sketch -->
+
+            
+            <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="themeToggle" />
+                <label class="form-check-label d-flex align-items-center" for="themeToggle" aria-label="Toggle dark mode">
+                    <i id="themeIcon" class="bi bi-moon-stars"></i>
+                </label>
+            </div>
+
+            <form class="app-search" method="get" asp-controller="Echoes" asp-action="Index">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control" placeholder="Search..." />
+                </div>
+            </form>
+
+
+        </div>
+    </header>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="app-main">
+        <div class="app-content">
+            @RenderBody()
+        </div>
+
+    </main>
+
+
+    <!-- BOTTOM-RIGHT floating message (TempData) -->
+    @if (ViewBag.Message != null)
+    {
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index:2000;">
+            <div class="alert @ViewBag.Type alert-dismissible fade show mb-0" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="me-3"><b>@ViewBag.Message</b></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container px-5 w-75">
-        <main role="main" class="pb-3 mx-5">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - BAtwitter_DAW_2526 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
-    </footer>
+    }
+
+
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
@@ -84,3 +147,5 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+

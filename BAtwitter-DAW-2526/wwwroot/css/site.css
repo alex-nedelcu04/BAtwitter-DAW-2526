@@ -29,3 +29,88 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+:root {
+    --sidebar-width: 185px;
+    --topbar-height: 64px;
+}
+
+/* Layout skeleton */
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    z-index: 1030;
+}
+
+.app-topbar {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--topbar-height);
+    z-index: 1040;
+}
+
+.app-main {
+    margin-left: var(--sidebar-width);
+    padding-top: var(--topbar-height);
+    min-height: 100vh;
+}
+
+/* ~95% width RenderBody area */
+.app-content {
+    width: 95%;
+    margin: 0 auto;
+    padding: 1.25rem;
+}
+
+/* Sidebar behavior */
+.sidebar-links {
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+    .sidebar-links .nav-link {
+        border-radius: .5rem;
+        color: #212529;
+    }
+
+        .sidebar-links .nav-link:hover {
+            background: rgba(0,0,0,.05);
+        }
+
+/* Bottom-left user area in sidebar */
+.sidebar-user {
+    flex: 0 0 auto;
+}
+
+/* Search sizing */
+.app-search {
+    width: min(420px, 55vw);
+}
+
+/* Toast should sit above anything else */
+.app-toast {
+    z-index: 2000;
+}
+
+/* Sidebar link colors adapt to Bootstrap 5.3 theme */
+.sidebar-links .nav-link {
+    color: var(--bs-body-color);
+    border-radius: .5rem;
+}
+
+    .sidebar-links .nav-link:hover {
+        background-color: rgba(var(--bs-emphasis-color-rgb), .08);
+        color: var(--bs-body-color);
+    }
+
+    /* Optional: make icons follow text color */
+    .sidebar-links .nav-link .bi {
+        color: currentColor;
+    }
