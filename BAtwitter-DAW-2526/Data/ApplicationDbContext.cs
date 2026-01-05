@@ -19,7 +19,7 @@ namespace BAtwitter_DAW_2526.Data
         public DbSet<Interaction> Interactions { get; set; }
         public DbSet<Relation> Relations { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
-        
+        //public DbSet<FollowRequest> FollowRequests { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

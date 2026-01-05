@@ -7,7 +7,6 @@ namespace BAtwitter_DAW_2526.Models
 
     public class Relation
     {
-  
         public string SenderId { get; set; } = string.Empty;
         public string ReceiverId { get; set; } = string.Empty;
 
@@ -17,7 +16,5 @@ namespace BAtwitter_DAW_2526.Models
 
         public DateTime relationDate { get; set; } = DateTime.Now;
         public int type = 1; // followed = 1, blocked = -1
-
-
     }
 }

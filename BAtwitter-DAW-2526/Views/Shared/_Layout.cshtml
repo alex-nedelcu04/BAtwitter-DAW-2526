@@ -89,16 +89,6 @@
     <!-- TOP BAR (fixed) with search on the right -->
     <header class="app-topbar bg-body-tertiary border-bottom">
         <div class="h-100 px-3 d-flex align-items-center justify-content-between">
-            <!-- Use input-group like in sketch -->
-
-            
-            <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
-                <input class="form-check-input" type="checkbox" role="switch" id="themeToggle" />
-                <label class="form-check-label d-flex align-items-center" for="themeToggle" aria-label="Toggle dark mode">
-                    <i id="themeIcon" class="bi bi-moon-stars"></i>
-                </label>
-            </div>
-
             <form class="app-search" method="get" asp-controller="Echoes" asp-action="Index">
                 <div class="input-group">
                     <span class="input-group-text">
@@ -107,8 +97,13 @@
                     <input type="text" name="q" class="form-control" placeholder="Search..." />
                 </div>
             </form>
-
-
+            
+            <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="themeToggle" />
+                <label class="form-check-label d-flex align-items-center" for="themeToggle" aria-label="Toggle dark mode">
+                    <i id="themeIcon" class="bi bi-moon-stars"></i>
+                </label>
+            </div>
         </div>
     </header>
 
