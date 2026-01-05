@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/BAtwitter-DAW-2526/Views/Shared/_Layout.cshtml
