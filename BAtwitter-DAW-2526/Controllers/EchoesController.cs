@@ -594,7 +594,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int id, string? type)
         {
             Echo? echo = db.Echoes.Find(id);
 
@@ -602,7 +602,14 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["message"] = "Echo does not exist!";
                 TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
 
             // Obține utilizatorul deleted
@@ -614,14 +621,28 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["message"] = "Deleted user not found!";
                 TempData["type"] = "alert-danger";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
 
             if (echo.UserId == deletedUser.Id)
             {
                 TempData["message"] = "Echo was already deleted!";
                 TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
 
             if (echo.UserId == _userManager.GetUserId(User) || User.IsInRole("Admin"))
@@ -634,20 +655,41 @@ namespace BAtwitter_DAW_2526.Controllers
                     db.SaveChanges();
                     TempData["message"] = "Echo was deleted!";
                     TempData["type"] = "alert-info";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
                 catch (DbUpdateException)
                 {
                     TempData["message"] = "Echo could not be deleted...";
                     TempData["type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
             }
             else
             {
                 TempData["message"] = "You do not have the necessary permissions to delete this echo.";
                 TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
         }
 
@@ -661,7 +703,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["message"] = "Echo does not exist!";
                 TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
+                return RedirectToAction("IndexAdmin");
             }
 
             if (User.IsInRole("Admin"))
@@ -673,20 +715,20 @@ namespace BAtwitter_DAW_2526.Controllers
                     db.SaveChanges();
                     TempData["message"] = "Echo was deleted!";
                     TempData["type"] = "alert-info";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexAdmin");
                 }
                 catch (DbUpdateException)
                 {
                     TempData["message"] = "Echo could not be deleted...";
                     TempData["type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexAdmin");
                 }
             }
             else
             {
                 TempData["message"] = "You do not have the necessary permissions to delete this echo.";
                 TempData["type"] = "alert-warning";
-                return RedirectToAction("Index");
+                return RedirectToAction("IndexAdmin");
             }
         }
 
@@ -702,7 +744,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["message"] = "There are no echoes not marked as deleted!";
                     TempData["type"] = "alert-warning";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexAdmin");
                 }
 
                 var deletedUser = db.Users.Where(u => u.UserName == "deleted").FirstOrDefault();
@@ -711,7 +753,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["message"] = "Deleted user not found!";
                     TempData["type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexAdmin");
                 }
 
                 foreach (var echo in echoes)
@@ -754,7 +796,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["message"] = "There are no Echoes in the database!";
                     TempData["type"] = "alert-warning";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexAdmin");
                 }
             
                 foreach (var echo in echoes)

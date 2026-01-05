@@ -276,6 +276,7 @@
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
                     <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <input type="hidden" name="type" value="admin" />
                         <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
                     </form>
 
@@ -290,19 +291,22 @@
             @if ((Model.UserId == ViewBag.CurrentUser || ViewBag.IsAdmin) && showButtons && !Model.IsRemoved)
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
+                    <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
+
                     @if (ViewBag.IsAdmin)
                     {
-                        <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                            <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
-                        </form>
+                        <div class="d-flex flex-row justify-content-between">
+                            <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
+                            </form>
 
-                        <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                            <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
-                        </form>
+                            <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
+                            </form>
+                        </div>
                     }
                     else
                     {
-                        <a class="btn btn-success" asp-controller="Echoes" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Echo</a>
                         <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                             <button class="btn btn-danger" type="submit">Delete Echo</button>
                         </form>

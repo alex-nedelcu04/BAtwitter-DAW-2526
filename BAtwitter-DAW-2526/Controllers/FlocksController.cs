@@ -420,7 +420,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult DeleteAdmin(int id)
+        public IActionResult DeleteAdmin(int id, string? type)
         {
             if (User.IsInRole("Admin"))
             {
@@ -430,7 +430,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["flock-message"] = "Flock does not exist!";
                     TempData["flock-type"] = "alert-warning";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
             
                 // Obține utilizatorul deleted
@@ -442,7 +449,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["flock-message"] = "Deleted user not found!";
                     TempData["flock-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
 
                 // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
@@ -464,20 +478,41 @@ namespace BAtwitter_DAW_2526.Controllers
                     db.SaveChanges();
                     TempData["flock-message"] = "Flock was deleted!";
                     TempData["flock-type"] = "alert-info";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
                 catch (DbUpdateException)
                 {
                     TempData["flock-message"] = "Flock could not be deleted...";
                     TempData["flock-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
             }
             else
             {
                 TempData["flock-message"] = "You are not authorized to delete this flock.";
                 TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
         }
 

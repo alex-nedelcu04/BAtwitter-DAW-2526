@@ -92,6 +92,7 @@
                     {
                         <div class="d-flex flex-row justify-content-between">
                             <form method="post" asp-controller="Flock" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <input type="hidden" name="type" value="admin" />
                                 <button class="btn btn-warning" type="submit">Mark Flock as Deleted</button>
                             </form>
 
