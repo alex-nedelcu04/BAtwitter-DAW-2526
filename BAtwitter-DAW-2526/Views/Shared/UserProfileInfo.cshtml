@@ -103,13 +103,48 @@
             else if ((Model.Id == ViewBag.CurrentUser || ViewBag.IsAdmin) && Model.AccountStatus != "deleted")
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
-                    @if (Model.Id == ViewBag.CurrentUser)
-                    {
-                        <a class="btn btn-success" asp-controller="UserProfiles" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Profile</a>
-                    }
+                    <div class="d-flex gap-2">
+                        @if (Model.Id == ViewBag.CurrentUser)
+                        {
+                            <a class="btn btn-success" asp-controller="UserProfiles" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Profile</a>
+                            <a class="btn btn-outline-primary" asp-controller="FollowRequests" asp-action="PendingUserRequests" onclick="event.stopPropagation();">
+                                <i class="bi bi-envelope"></i> Requests
+                            </a>
+                        }
+                    </div>
                     <form method="post" asp-controller="UserProfiles" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                         <button class="btn btn-danger" type="submit">Delete Profile</button>
                     </form>
+                </div>
+            }
+            else if (Model.Id != ViewBag.CurrentUser && Model.AccountStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser))
+            {
+                <!-- BUTON FOLLOW  -->
+                <div class="d-flex flex-row justify-content-start mt-3 gap-2">
+                    @if (ViewBag.IsFollowing == true)
+                    {
+                        <span class="btn btn-secondary disabled">Following</span>
+                    }
+                    else if (ViewBag.HasPendingRequest == true)
+                    {
+                        <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-warning" type="submit">Cancel Request</button>
+                        </form>
+                    }
+                    else if (Model.AccountStatus == "private")
+                    {
+                        <!-- CONT PRIVAT-->
+                        <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-primary" type="submit">Follow</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <!-- CONT PUBLIC -->
+                        <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                            <button class="btn btn-primary" type="submit">Follow</button>
+                        </form>
+                    }
                 </div>
             }
         }

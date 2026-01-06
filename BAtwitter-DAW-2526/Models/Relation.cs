@@ -15,6 +15,6 @@ namespace BAtwitter_DAW_2526.Models
         public virtual UserProfile? Receiver { get; set; }
 
         public DateTime relationDate { get; set; } = DateTime.Now;
-        public int type = 1; // followed = 1, blocked = -1
+        public int Type { get; set; } = 1; // followed = 1, blocked = -1
     }
 }

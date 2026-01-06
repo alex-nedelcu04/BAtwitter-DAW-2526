@@ -69,6 +69,35 @@
             </div>
         }
 
+        <!-- JOIN BUTTON -->
+        @if (Model.AdminId != ViewBag.CurrentUser && !showRecent && Model.FlockStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser))
+        {
+            @if (ViewBag.IsMember == true)
+            {
+                <div class="d-flex flex-row justify-content-start mt-3">
+                    <span class="btn btn-success disabled">Member</span>
+                </div>
+            }
+            else if (ViewBag.HasPendingRequest == true)
+            {
+                <div class="d-flex flex-row justify-content-start mt-3 gap-2">
+                    <form method="post" asp-controller="FollowRequests" asp-action="CancelFlockJoinRequest" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-warning" type="submit">Cancel Join Request</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-row justify-content-start mt-3">
+                    <form method="post" asp-controller="FollowRequests" asp-action="SendFlockJoinRequest" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-people"></i> Request to Join
+                        </button>
+                    </form>
+                </div>
+            }
+        }
+
         <!-- MODIFY AND DELETE BUTTONS -->
         @if ((Model.AdminId == ViewBag.CurrentUser) && !showRecent)
         {
@@ -86,6 +115,9 @@
                     @if (Model.AdminId == ViewBag.CurrentUser)
                     {
                         <a class="btn btn-success" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Flock</a>
+                        <a class="btn btn-info" asp-controller="FollowRequests" asp-action="PendingFlockRequests" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
+                            <i class="bi bi-envelope"></i> Join Requests
+                        </a>
                     }
 
                     @if (User.IsInRole("Admin"))

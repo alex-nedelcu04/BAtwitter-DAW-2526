@@ -28,6 +28,15 @@
                     <span asp-validation-for="Pronouns" class="text-danger"></span>
                 </div>
 
+                <div class="mb-3">
+                    <label asp-for="AccountStatus" class="form-label">Account Status</label>
+                    <select asp-for="AccountStatus" class="form-control">
+                        <option value="active">Public</option>
+                        <option value="private">Private</option>
+                    </select>
+                    <span asp-validation-for="AccountStatus" class="text-danger"></span>
+                </div>
+
                 <!-- Profile Picture Section -->
                 <div class="mb-3">
                     <label class="form-label">Profile Picture</label>

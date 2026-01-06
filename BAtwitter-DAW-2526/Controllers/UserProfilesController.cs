@@ -144,6 +144,7 @@ namespace BAtwitter_DAW_2526.Controllers
             userProfile.DisplayName = reqUserProfile.DisplayName;
             userProfile.Description = reqUserProfile.Description;
             userProfile.Pronouns = reqUserProfile.Pronouns;
+            userProfile.AccountStatus = reqUserProfile.AccountStatus;
 
             // Active after pressing delete and no new files
             if (removePfp && !string.IsNullOrEmpty(userProfile.PfpLink))
@@ -400,8 +401,33 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
-            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            var currentUserId = _userManager.GetUserId(User);
+            ViewBag.CurrentUser = currentUserId;
             ViewBag.UserEchoes = echoes;
+
+            // Check follow request status
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId != userProfile.Id)
+            {
+                // Check if already following
+                var isFollowing = db.Relations
+                    .Any(r => r.SenderId == currentUserId && r.ReceiverId == userProfile.Id && r.Type == 1);
+                
+                // Check if there's a pending request
+                var pendingRequest = db.FollowRequests
+                    .FirstOrDefault(fr => fr.SenderUserId == currentUserId && 
+                                        fr.ReceiverUserId == userProfile.Id && 
+                                        fr.ReceiverFlockId == null);
+                
+                ViewBag.IsFollowing = isFollowing;
+                ViewBag.HasPendingRequest = pendingRequest != null;
+                ViewBag.IsPrivateAccount = userProfile.AccountStatus == "private";
+            }
+            else
+            {
+                ViewBag.IsFollowing = false;
+                ViewBag.HasPendingRequest = false;
+                ViewBag.IsPrivateAccount = false;
+            }
 
             if (TempData.ContainsKey("userprofile-message"))
             {

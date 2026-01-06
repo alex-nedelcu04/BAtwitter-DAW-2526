@@ -28,6 +28,9 @@ namespace BAtwitter_DAW_2526.Models
 
         public virtual ICollection<Echo>? Echos { get; set; }
 
+        [System.ComponentModel.DataAnnotations.Schema.InverseProperty(nameof(FollowRequest.ReceiverFlock))]
+        public virtual ICollection<FollowRequest> FollowRequests { get; set; } = new List<FollowRequest>();
+
 
     }
 }

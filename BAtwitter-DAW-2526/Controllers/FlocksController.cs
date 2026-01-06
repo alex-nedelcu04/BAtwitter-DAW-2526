@@ -673,8 +673,30 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
-            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            var currentUserId = _userManager.GetUserId(User);
+            ViewBag.CurrentUser = currentUserId;
             ViewBag.FlockEchoes = echoes;
+
+            // Check join request and membership status
+            if (!string.IsNullOrEmpty(currentUserId) && flock.AdminId != currentUserId)
+            {
+                // Check if already a member
+                var isMember = db.FlockUsers
+                    .Any(fu => fu.FlockId == id && fu.UserId == currentUserId);
+                
+                // Check if there's a pending request
+                var pendingRequest = db.FollowRequests
+                    .FirstOrDefault(fr => fr.SenderUserId == currentUserId && 
+                                        fr.ReceiverFlockId == id);
+                
+                ViewBag.IsMember = isMember;
+                ViewBag.HasPendingRequest = pendingRequest != null;
+            }
+            else
+            {
+                ViewBag.IsMember = false;
+                ViewBag.HasPendingRequest = false;
+            }
 
             if (TempData.ContainsKey("flock-message"))
             {

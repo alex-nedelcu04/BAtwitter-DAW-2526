@@ -34,9 +34,26 @@ namespace BAtwitter_DAW_2526.Controllers
 
             var currentUserId = _userManager.GetUserId(User);
 
+            var followedUserIds = db.Relations
+                                .Where(r => r.SenderId == currentUserId && r.Type == 1)
+                                .Select(r => r.ReceiverId)
+                                .ToList();
+
+            var activeUserIds = db.UserProfiles
+                                .Where(u => u.AccountStatus == "active")
+                                .Select(u => u.Id)
+                                .ToList();
+
+            // Lista cu utilizatorii privați pe care NU îi urmărești
+            var privateUserIdsNotFollowed = db.UserProfiles
+                                .Where(u => u.AccountStatus == "private" && !followedUserIds.Contains(u.Id) && u.Id != currentUserId)
+                                .Select(u => u.Id)
+                                .ToList();
+
             // Echo-uri normale (nu sunt comentarii)
             var normalEchoes = db.Echoes
-                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null)
+                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null 
+                                        && (ech.UserId == currentUserId || activeUserIds.Contains(ech.UserId) || followedUserIds.Contains(ech.UserId)))
                                 .Include(ech => ech.User)
                                     .ThenInclude(u => u!.ApplicationUser)
                                 .Include(ech => ech.AmpParent)
@@ -58,12 +75,18 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             // echo-uri cu rebound + info user care a facut rebound
+            // NU arăta rebound-uri făcute de utilizatori privați pe care nu îi urmezi (ex: foden47)
             var reboundInteractions = db.Interactions
                 .Where(i => i.Rebounded &&
                             i.Echo != null &&
                             !i.Echo.IsRemoved &&
                             i.Echo.UserId != deletedUserId &&
-                            i.Echo.CommParentId == null)
+                            i.Echo.CommParentId == null &&
+                            !privateUserIdsNotFollowed.Contains(i.UserId) &&
+                            (i.UserId == currentUserId || 
+                             i.Echo.UserId == currentUserId || 
+                             followedUserIds.Contains(i.Echo.UserId) || 
+                             followedUserIds.Contains(i.UserId)))
                 .Include(i => i.Echo!)
                     .ThenInclude(e => e!.User)
                         .ThenInclude(u => u!.ApplicationUser)

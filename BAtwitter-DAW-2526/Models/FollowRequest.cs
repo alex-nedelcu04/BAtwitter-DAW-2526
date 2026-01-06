@@ -6,6 +6,9 @@ namespace BAtwitter_DAW_2526.Models
 {
     public class FollowRequest
     {
+        [Key]
+        public int Id { get; set; }
+
         public string SenderUserId { get; set; } = string.Empty;
         public string ReceiverUserId { get; set; } = string.Empty;
         public int? ReceiverFlockId { get; set; }

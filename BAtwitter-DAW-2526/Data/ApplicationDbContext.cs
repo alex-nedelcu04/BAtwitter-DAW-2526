@@ -19,7 +19,7 @@ namespace BAtwitter_DAW_2526.Data
         public DbSet<Interaction> Interactions { get; set; }
         public DbSet<Relation> Relations { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
-        //public DbSet<FollowRequest> FollowRequests { get; set; }
+        public DbSet<FollowRequest> FollowRequests { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +103,39 @@ namespace BAtwitter_DAW_2526.Data
                 entity.HasOne(e => e.AmpParent)
                       .WithMany(e => e.Amplifiers)
                       .HasForeignKey(e => e.AmpParentId);
+            });
+
+            modelBuilder.Entity<FollowRequest>(entity =>
+            {
+                // Primary key is Id (auto-increment)
+                entity.HasKey(fr => fr.Id);
+
+                entity.HasOne(fr => fr.SenderUser)
+                      .WithMany(u => u.SentFollowRequests)
+                      .HasForeignKey(fr => fr.SenderUserId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(fr => fr.ReceiverUser)
+                      .WithMany(u => u.ReceivedFollowRequests)
+                      .HasForeignKey(fr => fr.ReceiverUserId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(fr => fr.ReceiverFlock)
+                      .WithMany(f => f.FollowRequests)
+                      .HasForeignKey(fr => fr.ReceiverFlockId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                // Add unique constraint for user-to-user requests (ReceiverFlockId is null)
+                // Prevents duplicate follow requests between same users
+                entity.HasIndex(fr => new { fr.SenderUserId, fr.ReceiverUserId })
+                      .HasFilter("[ReceiverFlockId] IS NULL")
+                      .IsUnique();
+
+                // Add unique constraint for flock join requests
+                // Prevents duplicate join requests from same user to same flock
+                entity.HasIndex(fr => new { fr.SenderUserId, fr.ReceiverFlockId })
+                      .HasFilter("[ReceiverFlockId] IS NOT NULL")
+                      .IsUnique();
             });
         }
     }

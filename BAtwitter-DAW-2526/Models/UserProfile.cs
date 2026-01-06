@@ -32,5 +32,11 @@ namespace BAtwitter_DAW_2526.Models
 
         [InverseProperty(nameof(Relation.Receiver))]
         public virtual ICollection<Relation> ReceivedRelations { get; set; } = new List<Relation>();
+
+        [InverseProperty(nameof(FollowRequest.SenderUser))]
+        public virtual ICollection<FollowRequest> SentFollowRequests { get; set; } = new List<FollowRequest>();
+
+        [InverseProperty(nameof(FollowRequest.ReceiverUser))]
+        public virtual ICollection<FollowRequest> ReceivedFollowRequests { get; set; } = new List<FollowRequest>();
     }
 }
