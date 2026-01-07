@@ -73,8 +73,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["flock-type"];
             }
 
+            ViewBag.Title = "Flock Feed";
             SetAccessRights();
-
             return View();
         }
 
@@ -110,8 +110,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["flock-type"];
             }
 
+            ViewBag.Title = "List of Flocks";
             SetAccessRights();
-
             return View();
         }
 
@@ -120,6 +120,7 @@ namespace BAtwitter_DAW_2526.Controllers
         public IActionResult New()
         {
             Flock fl = new();
+            ViewBag.Title = "New Flock";
             SetAccessRights();
             return View(fl);
         }
@@ -232,6 +233,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
+                ViewBag.Title = "Edit Flock";
                 SetAccessRights();
                 return View(flock);
             }
@@ -649,7 +651,7 @@ namespace BAtwitter_DAW_2526.Controllers
         {
             var flock = db.Flocks
                 .Include(f => f.Admin)
-                    .ThenInclude(a => a.ApplicationUser)
+                    .ThenInclude(a => a!.ApplicationUser)
                 .Where(f => f.Id == id)
                 .FirstOrDefault();
 
@@ -668,7 +670,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             var echoes = db.Echoes // am pus si Echoes ca mna afisam practic toate postarile din comunitate
                             .Include(ech => ech.User)
-                                .ThenInclude(u => u.ApplicationUser)
+                                .ThenInclude(u => u!.ApplicationUser)
                             .Include(ech => ech.Interactions)
                             .Where(e => e.FlockId == id && e.CommParentId == null && !e.IsRemoved && e.UserId != deletedUserId) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
@@ -703,9 +705,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Message = TempData["flock-message"];
                 ViewBag.Type = TempData["flock-type"];
             }
+            else if (TempData.ContainsKey("followrequest-message"))
+            {
+                ViewBag.Message = TempData["followrequest-message"];
+                ViewBag.Type = TempData["followrequest-type"];
+            }
 
+            ViewBag.Title = "View Flock";
             SetAccessRights();
-
             return View(flock);
         }
 

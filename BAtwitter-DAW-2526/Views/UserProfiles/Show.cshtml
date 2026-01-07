@@ -1,19 +1,32 @@
 ﻿@model BAtwitter_DAW_2526.Models.UserProfile
 
-
-@if (ViewBag.Message != null)
-{
-
-    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
-}
-
-<br />
-
-
-
 <partial name="UserProfileInfo" model="@Model" />
 
-@foreach (var echo in ViewBag.UserEchoes)
+@* Model.Id == ViewBag.CurrentUser || !ViewBag.IsPrivateAccount || (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && ViewBag.IsFollowing) *@
+
+@if (ViewBag.IsBlockedBy)
 {
-    <partial name="EchoInfo" model="echo" />
+    <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+        You have been blocked by this user.
+    </small>
+}
+else if (ViewBag.HasBlocked)
+{
+    <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+        You have blocked this user. View profile anyways?
+    </small>
+    <!-- Aici ar trebui sa bagam un yes/no sub forma a doua taburi si dupa ce schimbi de la yes la no dispar taburile si aia e tot sau cv de genul -->
+}
+else if (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && !ViewBag.IsFollowing)
+{
+    <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+        This profile is private.
+    </small>
+}
+else
+{
+    @foreach (var echo in ViewBag.UserEchoes)
+    {
+        <partial name="EchoInfo" model="echo" />
+    }
 }

@@ -1,11 +1,4 @@
-﻿<h2 class="text-center">Flock Feed</h2>
-<br />
-
-@if (ViewBag.Message != null)
-{
-    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
-}
-
+﻿
 @foreach (var flock in ViewBag.Flocks)
 {
     <partial name="FlockInfo" model="flock" />

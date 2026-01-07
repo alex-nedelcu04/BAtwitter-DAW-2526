@@ -126,8 +126,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            ViewBag.Title = "Main Feed";
             SetAccessRights();
-
             return View();
         }
 
@@ -141,6 +141,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            ViewBag.Title = "Admin Interface";
             SetAccessRights();
             return View();
         }
@@ -167,8 +168,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            ViewBag.Title = "List of Echoes";
             SetAccessRights();
-
             return View();
         }
 
@@ -200,8 +201,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            ViewBag.Title = "Amplifiers";
             SetAccessRights();
-
             return View();
         }
 
@@ -228,9 +229,9 @@ namespace BAtwitter_DAW_2526.Controllers
                                     .ToList();
                                     // useful! - .AsNoTracking() - lista / rezultatul in sine devine readonly si nu poate fi modificat de db.SaveChanges();
                                     
+            ViewBag.Title = "Bookmarks";
             ViewBag.Echoes = bookmarkEchoes;
             SetAccessRights();
-
             return View();
         }
 
@@ -295,8 +296,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["type"];
             }
 
+            ViewBag.Title = "View Echo";
             SetAccessRights();
-
             return View(echo);
         }
 
@@ -338,8 +339,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
             }
 
+            ViewBag.Title = "New Echo";
             SetAccessRights();
-
             return View(echo);
         }
 
@@ -488,6 +489,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (echo.UserId == _userManager.GetUserId(User))
             {
+                ViewBag.Title = "Modify Echo";
                 SetAccessRights();
                 return View(echo);
             }

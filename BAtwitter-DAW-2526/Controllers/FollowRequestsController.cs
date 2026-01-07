@@ -181,6 +181,72 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult UnfollowUser(string receiverUserId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                TempData["followrequest-message"] = "You must be logged in to unfollow a user.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var receiverUser = db.UserProfiles
+                .Include(u => u.ApplicationUser)
+                .FirstOrDefault(u => u.Id == receiverUserId);
+
+            if (receiverUser == null)
+            {
+                TempData["followrequest-message"] = "User not found.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "UserProfiles");
+            }
+
+            if (receiverUserId == currentUserId)
+            {
+                TempData["followrequest-message"] = "You cannot unfollow yourself.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+            }
+
+            /*
+            if (receiverUser.AccountStatus == "private")
+            {
+                return RedirectToAction("SendFollowRequest", new { receiverUserId = receiverUserId });
+            }*/
+
+            var existingRelation = db.Relations
+                .FirstOrDefault(r => r.SenderId == currentUserId && r.ReceiverId == receiverUserId && r.Type == 1);
+
+            if (existingRelation == null)
+            {
+                TempData["followrequest-message"] = "You are not following this user.";
+                TempData["followrequest-type"] = "alert-info";
+                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+            }
+
+            var blockedRelation = db.Relations
+                .FirstOrDefault(r => (r.SenderId == currentUserId && r.ReceiverId == receiverUserId && r.Type == -1) ||
+                                     (r.SenderId == receiverUserId && r.ReceiverId == currentUserId && r.Type == -1));
+
+            if (blockedRelation != null)
+            {
+                TempData["followrequest-message"] = "You cannot unfollow this user.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+            }
+
+            
+            db.Relations.Remove(existingRelation);
+            db.SaveChanges();
+
+            TempData["followrequest-message"] = "You have unfollowed this user!";
+            TempData["followrequest-type"] = "alert-info";
+            return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+        }
+
         /// <summary>
         /// Accept a follow request (for user-to-user follows)
         /// </summary>
@@ -378,6 +444,45 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", "Flocks", new { id = flockId });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult UnfollowFlock(int flockId, string userId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                TempData["followrequest-message"] = "You must be logged in to unfollow a Flock.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Find the flock
+            var flock = db.Flocks.Find(flockId);
+            if (flock == null)
+            {
+                TempData["followrequest-message"] = "Flock not found.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Flocks");
+            }
+
+            // Check if user is already a member
+            var existingMember = db.FlockUsers
+                .FirstOrDefault(fu => fu.FlockId == flockId && fu.UserId == userId);
+
+            if (existingMember == null)
+            {
+                TempData["followrequest-message"] = "You must be a member to unfollow a flock.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Flocks");
+            }
+
+            db.FlockUsers.Remove(existingMember);
+            db.SaveChanges();
+
+            TempData["followrequest-message"] = "Unfollowed flock!";
+            TempData["followrequest-type"] = "alert-success";
+            return RedirectToAction("Show", "Flocks", new { id = flockId });
+        }
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -513,7 +618,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["followrequest-message"] = "Join request not found.";
                 TempData["followrequest-type"] = "alert-warning";
-                return RedirectToAction("PendingUserRequests");
+                return RedirectToAction("Show", "Flocks", new { id = flockId });
             }
 
 
@@ -522,7 +627,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             TempData["followrequest-message"] = "Join request cancelled.";
             TempData["followrequest-type"] = "alert-info";
-            return RedirectToAction("PendingUserRequests");
+            return RedirectToAction("Show", "Flocks", new { id = flockId });
         }
 
 
@@ -562,6 +667,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["followrequest-type"];
             }
 
+            ViewBag.Title = "Follow Requests";
             return View();
         }
 
@@ -609,6 +715,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["followrequest-type"];
             }
 
+            ViewBag.Title = "Flock Join Requests";
             return View(flock);
         }
 

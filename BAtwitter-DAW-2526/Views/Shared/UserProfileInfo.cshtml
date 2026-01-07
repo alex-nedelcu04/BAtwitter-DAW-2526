@@ -57,6 +57,13 @@
                     <h4 class="fw-bold mb-0">@Model.DisplayName  <small class="h6 text-muted mb-0">@Model.Pronouns </small></h4>
                     <h5 class="text-muted mb-0"> @@@Model.ApplicationUser?.UserName</h5>
                 </div>
+                
+                @if (Model.AccountStatus.Equals("private") || (ViewBag.IsPrivateAccount != null && ViewBag.IsPrivateAccount == true))
+                {
+                    <div class="ms-1 mt-4 fs-5 d-flex flex-column align-items-center justify-content-center">
+                        <i class="bi bi-lock-fill"></i>
+                    </div>
+                }
             </div>
 
             <div class="small text-muted text-end mt-5">
@@ -77,7 +84,7 @@
 
         @if (!Model.ApplicationUser!.UserName!.Equals("deleted"))
         {
-            @if ((isIndexAdmin || isShow) && ViewBag.IsAdmin)
+            @if (isIndexAdmin && ViewBag.IsAdmin)
             {
                 @if (Model.AccountStatus == "deleted")
                 {
@@ -100,7 +107,7 @@
                     </div>
                 }
             }
-            else if ((Model.Id == ViewBag.CurrentUser || ViewBag.IsAdmin) && Model.AccountStatus != "deleted")
+            else if (Model.Id == ViewBag.CurrentUser && Model.AccountStatus != "deleted")
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
                     <div class="d-flex gap-2">
@@ -119,33 +126,107 @@
             }
             else if (Model.Id != ViewBag.CurrentUser && Model.AccountStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser))
             {
-                <!-- BUTON FOLLOW  -->
-                <div class="d-flex flex-row justify-content-start mt-3 gap-2">
-                    @if (ViewBag.IsFollowing == true)
-                    {
-                        <span class="btn btn-secondary disabled">Following</span>
-                    }
-                    else if (ViewBag.HasPendingRequest == true)
-                    {
-                        <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                            <button class="btn btn-warning" type="submit">Cancel Request</button>
-                        </form>
-                    }
-                    else if (Model.AccountStatus == "private")
-                    {
-                        <!-- CONT PRIVAT-->
-                        <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                            <button class="btn btn-primary" type="submit">Follow</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <!-- CONT PUBLIC -->
-                        <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                            <button class="btn btn-primary" type="submit">Follow</button>
-                        </form>
-                    }
-                </div>
+                @if (ViewBag.IsAdmin)
+                {
+                    <!-- BUTON FOLLOW  -->
+                    <div class="d-flex flex-row justify-content-between mt-3 gap-2">
+                        @if (ViewBag.IsFollowing == true)
+                        {
+                            <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+
+                                <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-body">
+                                                Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
+                                            </div>
+                                            <div class="modal-footer d-flex justify-content-between">
+                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
+                                                <button type="submit" class="btn btn-success">Yes</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                        else if (ViewBag.HasPendingRequest == true)
+                        {
+                            <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-warning" type="submit">Cancel Request</button>
+                            </form>
+                        }
+                        else if (Model.AccountStatus == "private")
+                        {
+                            <!-- CONT PRIVAT-->
+                            <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-primary" type="submit">Follow</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <!-- CONT PUBLIC -->
+                            <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-primary" type="submit">Follow</button>
+                            </form>
+                        }
+                        <div class="d-flex flex-row justify-content-between">
+                            <form method="post" asp-controller="UserProfiles" asp-action="MarkAsDeletedAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-warning" type="submit">Mark User Profile as Deleted</button>
+                            </form>
+
+                            <form method="post" asp-controller="UserProfiles" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-danger" type="submit">Permanently Delete User Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- BUTON FOLLOW  -->
+                    <div class="d-flex flex-row justify-content-start mt-3 gap-2">
+                        @if (ViewBag.IsFollowing == true)
+                        {
+                            <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+
+                                <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-body">
+                                                Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
+                                            </div>
+                                            <div class="modal-footer d-flex justify-content-between">
+                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-success">Unfollow</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                        else if (ViewBag.HasPendingRequest == true)
+                        {
+                            <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-warning" type="submit">Cancel Request</button>
+                            </form>
+                        }
+                        else if (Model.AccountStatus == "private")
+                        {
+                            <!-- CONT PRIVAT-->
+                            <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-primary" type="submit">Follow</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <!-- CONT PUBLIC -->
+                            <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                <button class="btn btn-primary" type="submit">Follow</button>
+                            </form>
+                        }
+                    </div>
+                }
             }
         }
 

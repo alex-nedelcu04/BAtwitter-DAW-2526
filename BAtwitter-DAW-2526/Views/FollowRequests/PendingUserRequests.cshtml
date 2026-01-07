@@ -3,90 +3,95 @@
     private bool IsFlockJoinRequest(BAtwitter_DAW_2526.Models.FollowRequest request) => request.ReceiverFlockId != null;
 }
 
-@if (ViewBag.Message != null)
-{
-    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
-}
+<ul class="nav nav-tabs mb-3" id="tabs_userReqs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">Received Follow Requests</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#sent" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Sent Follow Requests</button>
+    </li>
+</ul>
 
-<br />
-
-<h2>Received Follow Requests</h2>
-@if (ViewBag.ReceivedRequests != null)
-{
-    @foreach (var request in ViewBag.ReceivedRequests)
-    {
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="mb-0">
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = request.SenderUser?.ApplicationUser?.UserName })" 
-                               class="text-decoration-none">
-                                @request.SenderUser?.DisplayName
-                            </a>
-                        </h5>
-                        <small class="text-muted">@@@request.SenderUser?.ApplicationUser?.UserName</small>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <form method="post" asp-action="AcceptFollowRequest" asp-route-senderUserId="@request.SenderUserId">
-                            <button class="btn btn-success" type="submit">Accept</button>
-                        </form>
-                        <form method="post" asp-action="RejectFollowRequest" asp-route-senderUserId="@request.SenderUserId">
-                            <button class="btn btn-danger" type="submit">Reject</button>
-                        </form>
+<div class="tab-content" id="tabs_userReqs_content">
+    <div class="tab-pane fade show active" id="received" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+        @if (ViewBag.ReceivedRequests != null)
+        {
+            @foreach (var request in ViewBag.ReceivedRequests)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h5 class="mb-0">
+                                    <a href="@Url.Action("Show", "UserProfiles", new { username = request.SenderUser?.ApplicationUser?.UserName })"
+                                       class="text-decoration-none">
+                                        @request.SenderUser?.DisplayName
+                                    </a>
+                                </h5>
+                                <small class="text-muted">@@@request.SenderUser?.ApplicationUser?.UserName</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form method="post" asp-action="AcceptFollowRequest" asp-route-senderUserId="@request.SenderUserId">
+                                    <button class="btn btn-success" type="submit">Accept</button>
+                                </form>
+                                <form method="post" asp-action="RejectFollowRequest" asp-route-senderUserId="@request.SenderUserId">
+                                    <button class="btn btn-danger" type="submit">Reject</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    }
-}
-
-<h2>Sent Requests</h2>
-@if (ViewBag.SentRequests != null)
-{
-    @foreach (var request in ViewBag.SentRequests)
-    {
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        @if (IsFlockJoinRequest(request))
-                        {
-                            <h5 class="mb-0">
-                                <a href="@Url.Action("Show", "Flocks", new { id = request.ReceiverFlockId })" 
-                                   class="text-decoration-none">
-                                    @request.ReceiverFlock?.Name
-                                </a>
-                            </h5>
-                            <small class="text-muted">Flock</small>
-                        }
-                        else
-                        {
-                            <h5 class="mb-0">
-                                <a href="@Url.Action("Show", "UserProfiles", new { username = request.ReceiverUser?.ApplicationUser?.UserName })" 
-                                   class="text-decoration-none">
-                                    @request.ReceiverUser?.DisplayName
-                                </a>
-                            </h5>
-                            <small class="text-muted">@@@request.ReceiverUser?.ApplicationUser?.UserName</small>
-                        }
-                    </div>
-                    <div>
-                        @if (IsFlockJoinRequest(request))
-                        {
-                            <form method="post" asp-action="CancelFlockJoinRequest" asp-route-flockId="@request.ReceiverFlockId">
-                                <button class="btn btn-warning" type="submit">Cancel</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <form method="post" asp-action="CancelFollowRequest" asp-route-receiverUserId="@request.ReceiverUserId">
-                                <button class="btn btn-warning" type="submit">Cancel</button>
-                            </form>
-                        }
+            }
+        }
+    </div>
+    <div class="tab-pane fade" id="sent" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+        @if (ViewBag.SentRequests != null)
+        {
+            @foreach (var request in ViewBag.SentRequests)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                @if (IsFlockJoinRequest(request))
+                                {
+                                    <h5 class="mb-0">
+                                        <a href="@Url.Action("Show", "Flocks", new { id = request.ReceiverFlockId })"
+                                           class="text-decoration-none">
+                                            @request.ReceiverFlock?.Name
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">Flock</small>
+                                }
+                                else
+                                {
+                                    <h5 class="mb-0">
+                                        <a href="@Url.Action("Show", "UserProfiles", new { username = request.ReceiverUser?.ApplicationUser?.UserName })"
+                                           class="text-decoration-none">
+                                            @request.ReceiverUser?.DisplayName
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">@@@request.ReceiverUser?.ApplicationUser?.UserName</small>
+                                }
+                            </div>
+                            <div>
+                                @if (IsFlockJoinRequest(request))
+                                {
+                                    <form method="post" asp-action="CancelFlockJoinRequest" asp-route-flockId="@request.ReceiverFlockId">
+                                        <button class="btn btn-warning" type="submit">Cancel</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="CancelFollowRequest" asp-route-receiverUserId="@request.ReceiverUserId">
+                                        <button class="btn btn-warning" type="submit">Cancel</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    }
-}
+            }
+        }
+    </div>
+</div>

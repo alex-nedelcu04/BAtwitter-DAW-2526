@@ -1,14 +1,5 @@
-﻿<h2 class="text-center mb-4">Admin Interface</h2>
-
-@if (ViewBag.Message != null)
-{
-    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
-}
-
-<div class="d-flex flex-column gap-3" style="max-width: 400px; margin: 0 auto;">
+﻿<div class="d-flex flex-column gap-3" style="max-width: 400px; margin: 0 auto;">
     <a asp-controller="Echoes" asp-action="IndexAdmin" class="btn btn-outline-primary">Manage all Echoes</a>
     <a asp-controller="Flocks" asp-action="IndexAdmin" class="btn btn-outline-primary">Manage all Flocks</a>
     <a asp-controller="UserProfiles" asp-action="IndexAdmin" class="btn btn-outline-primary">Manage all Users</a>
 </div>
-
-

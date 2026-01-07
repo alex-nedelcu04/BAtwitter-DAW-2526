@@ -99,6 +99,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (userProfile.Id == currentUserId)
             {
+                ViewBag.Title = "Edit Profile";
                 SetAccessRights();
                 return View(userProfile);
             }
@@ -396,8 +397,13 @@ namespace BAtwitter_DAW_2526.Controllers
 
             var echoes = db.Echoes
                             .Include(ech => ech.User)
-                                .ThenInclude(u => u.ApplicationUser)
-                            .Include(ech => ech.Interactions)
+                                .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                    .ThenInclude(ech => ech!.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.Interactions!)
+                                .ThenInclude(i => i.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
                             .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
@@ -411,22 +417,43 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Check if already following
                 var isFollowing = db.Relations
                     .Any(r => r.SenderId == currentUserId && r.ReceiverId == userProfile.Id && r.Type == 1);
-                
+
+                var isBlockedBy = db.Relations
+                    .Any(r => r.ReceiverId == currentUserId && r.SenderId == userProfile.Id && r.Type == -1);
+
+                var hasBlocked = db.Relations
+                    .Any(r => r.SenderId == currentUserId && r.ReceiverId == userProfile.Id && r.Type == -1);
+
                 // Check if there's a pending request
                 var pendingRequest = db.FollowRequests
                     .FirstOrDefault(fr => fr.SenderUserId == currentUserId && 
                                         fr.ReceiverUserId == userProfile.Id && 
                                         fr.ReceiverFlockId == null);
-                
+
                 ViewBag.IsFollowing = isFollowing;
+                ViewBag.IsBlockedBy = isBlockedBy;
+                ViewBag.HasBlocked = hasBlocked;
                 ViewBag.HasPendingRequest = pendingRequest != null;
                 ViewBag.IsPrivateAccount = userProfile.AccountStatus == "private";
             }
             else
             {
-                ViewBag.IsFollowing = false;
-                ViewBag.HasPendingRequest = false;
-                ViewBag.IsPrivateAccount = false;
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    ViewBag.IsFollowing = false;
+                    ViewBag.IsBlockedBy = false;
+                    ViewBag.HasBlocked = false;
+                    ViewBag.HasPendingRequest = false;
+                    ViewBag.IsPrivateAccount = userProfile.AccountStatus == "private";
+                }
+                else
+                {
+                    ViewBag.IsFollowing = false;
+                    ViewBag.IsBlockedBy = false;
+                    ViewBag.HasBlocked = false;
+                    ViewBag.HasPendingRequest = false;
+                    ViewBag.IsPrivateAccount = false;
+                }
             }
 
             if (TempData.ContainsKey("userprofile-message"))
@@ -434,12 +461,16 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Message = TempData["userprofile-message"];
                 ViewBag.Type = TempData["userprofile-type"];
             }
+            else if (TempData.ContainsKey("followrequest-message"))
+            {
+                ViewBag.Message = TempData["followrequest-message"];
+                ViewBag.Type = TempData["followrequest-type"];
+            }
 
+            ViewBag.Title = "View User";
             SetAccessRights();
-
             return View(userProfile);
         }
-
 
 
         [Authorize(Roles = "Admin")]
@@ -457,8 +488,8 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Type = TempData["userprofile-type"];
             }
 
+            ViewBag.Title = "List of Users";
             SetAccessRights();
-
             return View();
         }
 

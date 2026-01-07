@@ -41,7 +41,7 @@ else
                     <div class="d-flex flex-column align-items-center">
                         @if (Model.User?.ApplicationUser != null)
                         {
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="d-inline-block fw-semibold text-decoration-none text-dark text-truncate" style="max-width: 200px">
+                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="d-inline-block fw-semibold text-decoration-none text-truncate" style="max-width: 200px">
                                 @(Model.User?.DisplayName ?? "Unknown user")
                             </a>
                         }

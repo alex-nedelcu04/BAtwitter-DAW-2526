@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BAtwitter-DAW-2526.styles.css" asp-append-version="true" />
     
-
     <script>
         (function() {
             const STORAGE_KEY = "theme";
@@ -73,7 +72,7 @@
             {
                 <li class="nav-item">
                     <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="Bookmarks">
-                        <i class="bi bi-bookmark-heart me-2"></i>View Bookmarks
+                        <i class="bi bi-bookmark-heart me-2"></i>Bookmarks
                     </a>
                 </li>
             }
@@ -101,14 +100,28 @@
     <!-- TOP BAR (fixed) with search on the right -->
     <header class="app-topbar bg-body-tertiary border-bottom">
         <div class="h-100 px-3 d-flex align-items-center justify-content-between">
-            <form class="app-search" method="get" asp-controller="Echoes" asp-action="Index">
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" name="q" class="form-control" placeholder="Search..." />
-                </div>
-            </form>
+            <div class="d-flex flex-row justify-content-between">
+                <form class="app-search" method="get" asp-controller="Echoes" asp-action="Index">
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                        <input type="text" name="q" class="form-control" placeholder="Search..." />
+                    </div>
+                </form>
+
+                @if (ViewBag.Title != null)
+                {
+                    <div class="ms-3 d-flex flex-row align-items-center fs-4">
+                        <b>@ViewBag.Title</b>
+                    </div>
+                }
+                else if (ViewData["Title"] != null)
+                {
+                    <div class="ms-3 d-flex flex-row align-items-center fs-4">
+                        <b>@ViewData["Title"]</b>
+                    </div>
+                }
+            </div>
+
             
             <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
                 <input class="form-check-input" type="checkbox" role="switch" id="themeToggle" />
@@ -116,6 +129,8 @@
                     <i id="themeIcon" class="bi bi-moon-stars"></i>
                 </label>
             </div>
+
+
             <script>
                 // Set toggle state immediately to prevent animation
                 (function() {

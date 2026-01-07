@@ -14,12 +14,6 @@
     }
 }
 
-@* Echo + comments*@
-@if (ViewBag.Message != null)
-{
-    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
-}
-
 <!-- Aici vom insera recursia pt. parintii postarii -->
 @if (ViewBag.Parents != null && ((List<Echo>)ViewBag.Parents).Any())
 {
