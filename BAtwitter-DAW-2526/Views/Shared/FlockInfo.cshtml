@@ -116,44 +116,42 @@
             @if (Model.FlockStatus.Equals("deleted") && User.IsInRole("Admin"))
             {
                 <div class="d-flex flex-row justify-content-end mt-3">
-                    <form method="post" asp-controller="Flock" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <form method="post" asp-controller="Flocks" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <input type="hidden" name="type" value="admin" />
                         <button class="btn btn-danger" type="submit">Permanently Delete Flock</button>
                     </form>
                 </div>
             }
             else
             {
-                <div class="d-flex flex-row justify-content-between mt-3">
-                    @if (Model.AdminId == ViewBag.CurrentUser)
-                    {
+                @if (Model.AdminId == ViewBag.CurrentUser && !inAdmin)
+                {
+                    <div class="d-flex flex-row justify-content-between mt-3">
                         <div class="d-flex flex-row justify-content-between">
                             <a class="btn btn-success" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Flock</a>
                             <a class="btn btn-outline-primary" asp-controller="FollowRequests" asp-action="PendingFlockRequests" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
                                 <i class="bi bi-envelope"></i> Join Requests
                             </a>
                         </div>
-                    }
-
-                    @if (User.IsInRole("Admin") && inAdmin)
-                    {
-                        <div class="d-flex flex-row justify-content-between">
-                            <form method="post" asp-controller="Flock" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                                <input type="hidden" name="type" value="admin" />
-                                <button class="btn btn-warning" type="submit">Mark Flock as Deleted</button>
-                            </form>
-
-                            <form method="post" asp-controller="Flock" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-danger" type="submit">Permanently Delete Flock</button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
                         <form method="post" asp-controller="Flocks" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                             <button class="btn btn-danger" type="submit">Delete Flock</button>
                         </form>
-                    }
-                </div>
+                    </div>
+                }
+                else if (User.IsInRole("Admin") && inAdmin)
+                {
+                    <div class="d-flex flex-row justify-content-between mt-3">
+                        <form method="post" asp-controller="Flocks" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <input type="hidden" name="type" value="admin" />
+                            <button class="btn btn-warning" type="submit">Mark Flock as Deleted</button>
+                        </form>
+
+                        <form method="post" asp-controller="Flocks" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <input type="hidden" name="type" value="admin" />
+                            <button class="btn btn-danger" type="submit">Permanently Delete Flock</button>
+                        </form>
+                    </div>
+                }
             }
             
         }
@@ -162,7 +160,8 @@
             @if (Model.FlockStatus.Equals("deleted"))
             {
                 <div class="d-flex flex-row justify-content-end mt-3">
-                    <form method="post" asp-controller="Flock" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <form method="post" asp-controller="Flocks" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <input type="hidden" name="type" value="admin" />
                         <button class="btn btn-danger" type="submit">Permanently Delete Flock</button>
                     </form>
                 </div>
@@ -170,11 +169,13 @@
             else
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
-                    <form method="post" asp-controller="Flock" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <form method="post" asp-controller="Flocks" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <input type="hidden" name="type" value="admin" />
                         <button class="btn btn-warning" type="submit">Mark Flock as Deleted</button>
                     </form>
 
-                    <form method="post" asp-controller="Flock" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <form method="post" asp-controller="Flocks" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <input type="hidden" name="type" value="admin" />
                         <button class="btn btn-danger" type="submit">Permanently Delete Flock</button>
                     </form>
                 </div>

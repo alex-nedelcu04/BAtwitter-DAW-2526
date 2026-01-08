@@ -50,6 +50,136 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", new { username = currentUser.UserName });
         }
 
+        public IActionResult Followers(string username)
+        {
+            // If no username is provided, redirect to Index to get current user's profile
+            if (string.IsNullOrEmpty(username))
+            {
+                return RedirectToAction("Index");
+            }
+
+            // Find user by username first, then get their profile
+            var applicationUser = db.Users
+                .Where(u => u.UserName == username)
+                .FirstOrDefault();
+
+            if (applicationUser == null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            var userProfile = db.UserProfiles
+                .Include(up => up.ApplicationUser)
+                .Where(up => up.Id == applicationUser.Id)
+                .FirstOrDefault();
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            // Obține ID-ul utilizatorului deleted pentru a-l exclude
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
+            var followers = db.Relations
+                                .Include(rel => rel.Sender!.SentRelations)
+                                .Include(rel => rel.Sender!.ReceivedRelations)
+                                .Include(rel => rel.Sender!.ApplicationUser)
+                                .Where(rel => rel.ReceiverId == userProfile.Id)
+                                .OrderBy(rel => rel.relationDate)
+                                .Select(rel => rel.Sender).ToList();
+
+            var currentUserId = _userManager.GetUserId(User);
+            ViewBag.CurrentUser = currentUserId;
+            ViewBag.Followers = followers;
+
+            if (TempData.ContainsKey("userprofile-message"))
+            {
+                ViewBag.Message = TempData["userprofile-message"];
+                ViewBag.Type = TempData["userprofile-type"];
+            }
+            else if (TempData.ContainsKey("followrequest-message"))
+            {
+                ViewBag.Message = TempData["followrequest-message"];
+                ViewBag.Type = TempData["followrequest-type"];
+            }
+
+            ViewBag.Title = "Followers";
+            SetAccessRights();
+            return View(userProfile);
+        }
+
+        public IActionResult Follows(string username)
+        {
+            // If no username is provided, redirect to Index to get current user's profile
+            if (string.IsNullOrEmpty(username))
+            {
+                return RedirectToAction("Index");
+            }
+
+            // Find user by username first, then get their profile
+            var applicationUser = db.Users
+                .Where(u => u.UserName == username)
+                .FirstOrDefault();
+
+            if (applicationUser == null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            var userProfile = db.UserProfiles
+                .Include(up => up.ApplicationUser)
+                .Where(up => up.Id == applicationUser.Id)
+                .FirstOrDefault();
+
+            if (userProfile is null)
+            {
+                TempData["userprofile-message"] = "User profile does not exist!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            // Obține ID-ul utilizatorului deleted pentru a-l exclude
+            var deletedUserId = db.Users
+                .Where(u => u.UserName == "deleted")
+                .Select(u => u.Id)
+                .FirstOrDefault() ?? string.Empty;
+
+            var follows = db.Relations
+                            .Include(rel => rel.Receiver!.ApplicationUser)
+                            .Where(rel => rel.SenderId == userProfile.Id)
+                            .OrderBy(rel => rel.relationDate)
+                            .Select(rel => rel.Receiver).ToList();
+
+            var currentUserId = _userManager.GetUserId(User);
+            ViewBag.CurrentUser = currentUserId;
+            ViewBag.Follows = follows;
+
+            if (TempData.ContainsKey("userprofile-message"))
+            {
+                ViewBag.Message = TempData["userprofile-message"];
+                ViewBag.Type = TempData["userprofile-type"];
+            }
+            else if (TempData.ContainsKey("followrequest-message"))
+            {
+                ViewBag.Message = TempData["followrequest-message"];
+                ViewBag.Type = TempData["followrequest-type"];
+            }
+
+            ViewBag.Title = "Follows";
+            SetAccessRights();
+            return View(userProfile);
+        }
+
         // New nu e necesar pentru UserProfile
         // Dacă UserProfile nu există, redirect la Register
         [Authorize(Roles = "User, Admin")]
@@ -270,15 +400,22 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             UserProfile? userProfile = db.UserProfiles.Find(id);
+            var referer = Request.Headers["Referer"].ToString();
+            var isFromShow = referer.Contains("UserProfiles/Show");
 
             if (userProfile is null)
             {
                 TempData["userprofile-message"] = "User profile does not exist!";
                 TempData["userprofile-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (isFromShow)
+                {
+                    return RedirectToAction("Index");
+                }
+                return RedirectToAction("IndexAdmin");
             }
+            var username = userProfile.ApplicationUser?.UserName;
 
-            if (userProfile.Id == currentUserId)
+            if (userProfile.Id == currentUserId || User.IsInRole("Admin"))
             {
                 // Obține utilizatorul deleted
                 var deletedUser = db.Users
@@ -289,7 +426,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["userprofile-message"] = "System error: deleted user not found!";
                     TempData["userprofile-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (isFromShow)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    return RedirectToAction("IndexAdmin");
                 }
 
                 // Marchează contul ca șters
@@ -302,7 +443,15 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 foreach (var echo in userEchoes)
                 {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, false);
+                }
+
+                var userFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                var admin = admins[0];
+                foreach (var flock in userFlocks)
+                {
+                    flock.AdminId = admin.Id;
                 }
 
                 try
@@ -315,47 +464,50 @@ namespace BAtwitter_DAW_2526.Controllers
                         throw a;
                     }
 
-                    db.UserProfiles.Remove(userProfile);
-
-                    await _userManager.DeleteAsync(user);
-                    await _signInManager.SignOutAsync();
-                    _logger.LogInformation("User logged out.");
+                    if (userProfile.Id == currentUserId)
+                    {
+                        await _signInManager.SignOutAsync();
+                        _logger.LogInformation("User logged out.");
+                    }
 
                     await db.SaveChangesAsync();
 
                     TempData["userprofile-message"] = "Account was deleted!";
                     TempData["userprofile-type"] = "alert-info";
 
-
-                    return RedirectToAction("Index", "Home");
+                    if (isFromShow)
+                    {
+                        return RedirectToAction("Index", "Home");
+                    }
+                    return RedirectToAction("IndexAdmin");
                 }
                 catch (DbUpdateException)
                 {
                     // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
                     var applicationUser = db.Users.Find(userProfile.Id);
-                    var username = applicationUser?.UserName;
+                    var username1 = applicationUser?.UserName;
 
                     TempData["userprofile-message"] = "Account could not be deleted...";
                     TempData["userprofile-type"] = "alert-danger";
-                    return RedirectToAction("Show", new { username = username });
+                    return RedirectToAction("Show", new { username = username1 });
                 }
             }
             else
             {
                 // Get the username from the Users table since ApplicationUser navigation property wasn't loaded
                 var applicationUser = db.Users.Find(userProfile.Id);
-                var username = applicationUser?.UserName;
+                var username1 = applicationUser?.UserName;
 
                 TempData["userprofile-message"] = "You are not authorized to delete this profile.";
                 TempData["userprofile-type"] = "alert-warning";
-                return RedirectToAction("Show", new { username = username });
+                return RedirectToAction("Show", new { username = username1 });
             }
         }
 
 
         // Show va fi ca o vizualizare a profilului unui user designwise
         // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
-        [Authorize(Roles = "User, Admin")]
+        //[Authorize(Roles = "User, Admin")] - NO
         [Route("UserProfiles/Show/{username}")]
         public IActionResult Show(string username)
         {
@@ -407,9 +559,14 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
+            var followsCount = db.Relations.Count(rel => rel.SenderId == userProfile.Id);
+            var followersCount = db.Relations.Count(rel => rel.ReceiverId == userProfile.Id);
+
             var currentUserId = _userManager.GetUserId(User);
             ViewBag.CurrentUser = currentUserId;
             ViewBag.UserEchoes = echoes;
+            ViewBag.FollowsCount = followsCount;
+            ViewBag.FollowersCount = followersCount;
 
             // Check follow request status
             if (!string.IsNullOrEmpty(currentUserId) && currentUserId != userProfile.Id)
@@ -493,6 +650,7 @@ namespace BAtwitter_DAW_2526.Controllers
             return View();
         }
 
+        /*
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult MarkAsDeletedAdmin(string id)
@@ -532,7 +690,15 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 foreach (var echo in userEchoes)
                 {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, false);
+                }
+                
+                var userFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
+                var admins = _userManager.GetUsersInRoleAsync("Admin").Result;
+                var admin = admins[0];
+                foreach (var flock in userFlocks)
+                {
+                    flock.AdminId = admin.Id;
                 }
 
                 var username = userProfile.ApplicationUser?.UserName;
@@ -569,7 +735,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 TempData["userprofile-type"] = "alert-warning";
                 return RedirectToAction("IndexAdmin");
             }
-        }
+        }*/
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
@@ -607,8 +773,6 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 try
                 {
-              
-
                     var flockUsers = db.FlockUsers.Where(fu => fu.UserId == id).ToList();
                     db.FlockUsers.RemoveRange(flockUsers);
 
@@ -629,20 +793,21 @@ namespace BAtwitter_DAW_2526.Controllers
 
                         foreach (var echo in flockEchoes)
                         {
-                            AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                            AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, true);
                         }
 
                         await db.SaveChangesAsync();
 
                         db.Flocks.Remove(flock);
                     }
+
                     var userEchoes = db.Echoes
                         .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
                         .ToList();
 
                     foreach (var echo in userEchoes)
                     {
-                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, true);
                     }
 
                     await db.SaveChangesAsync();
@@ -748,9 +913,9 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // Atribuie echo și comentarii recursiv la utilizatorul deleted
-        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
+        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId, string userId, bool remUser)
         {
-            echo.UserId = deletedUserId;
+            echo.UserId = (remUser) ? deletedUserId : userId;
             echo.IsRemoved = true;
 
             var comments = db.Echoes
@@ -759,7 +924,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             foreach (var comment in comments)
             {
-                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
+                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId, userId, remUser);
             }
         }
     }

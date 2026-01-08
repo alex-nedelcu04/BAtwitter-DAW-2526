@@ -34,7 +34,6 @@ namespace BAtwitter_DAW_2526.Controllers
         // ca un feed: cea mai noua postare + banner pt flockul respectiv deasupra postarii in stilul viewului de profil ca un fel de advertisment
 
 
-        [Authorize(Roles = "User, Admin")]
         public IActionResult Index()
         {
             Dictionary<int, Echo?> echoes = [];
@@ -273,14 +272,14 @@ namespace BAtwitter_DAW_2526.Controllers
             if (removePfp && !string.IsNullOrEmpty(flock.PfpLink))
             {
                 DeletePhysicalFile(flock.PfpLink);
-                flock.PfpLink = null;
+                flock.PfpLink = string.Empty;
             }
 
             //  -- ADD BANNER TO FLOCK DETAILS
             if (removeBanner && !string.IsNullOrEmpty(flock.BannerLink))
             {
                 DeletePhysicalFile(flock.BannerLink);
-                flock.BannerLink = null;
+                flock.BannerLink = string.Empty;
             }
         
 
@@ -358,8 +357,8 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "User,Admin")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult Delete(int id, string? type)
         {
             Flock? flock = db.Flocks.Find(id);
 
@@ -367,7 +366,14 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["flock-message"] = "Flock does not exist!";
                 TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
 
             if (flock.AdminId == _userManager.GetUserId(User) || User.IsInRole("Admin"))
@@ -381,7 +387,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     TempData["flock-message"] = "Deleted user not found!";
                     TempData["flock-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
 
                 // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
@@ -403,20 +416,41 @@ namespace BAtwitter_DAW_2526.Controllers
                     db.SaveChanges();
                     TempData["flock-message"] = "Flock was deleted!";
                     TempData["flock-type"] = "alert-info";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
                 catch (DbUpdateException)
                 {
                     TempData["flock-message"] = "Flock could not be deleted...";
                     TempData["flock-type"] = "alert-danger";
-                    return RedirectToAction("Index");
+                    if (type == null)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else
+                    {
+                        return RedirectToAction("IndexAdmin");
+                    }
                 }
             }
             else
             {
                 TempData["flock-message"] = "You are not authorized to delete this flock.";
                 TempData["flock-type"] = "alert-warning";
-                return RedirectToAction("Index");
+                if (type == null)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    return RedirectToAction("IndexAdmin");
+                }
             }
         }
 
@@ -646,7 +680,6 @@ namespace BAtwitter_DAW_2526.Controllers
 
         // Show va fi ca o vizualizare a profilului unui user designwise
         // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
-        [Authorize(Roles = "User, Admin")]
         public IActionResult Show(int id)
         {
             var flock = db.Flocks

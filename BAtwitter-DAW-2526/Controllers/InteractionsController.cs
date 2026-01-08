@@ -22,6 +22,112 @@ namespace BAtwitter_DAW_2526.Controllers
             _env = env;
         }
 
+        public IActionResult Search(string? query)
+        {
+            var search = "";
+            if (Convert.ToString(HttpContext.Request.Query["query"]) != null)
+            {
+                search = Convert.ToString(HttpContext.Request.Query["query"]).Trim();
+
+                var deletedUser = db.Users
+                    .Where(u => u.UserName == "deleted")
+                    .FirstOrDefault();
+
+                var nonCommentEchoes = db.Echoes
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.SentRelations)
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.ReceivedRelations)
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.AmpParent)
+                                            .ThenInclude(ech => ech!.User)
+                                                .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.Interactions!)
+                                            .ThenInclude(i => i.User)
+                                                .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.Flock)
+                                        .ToList()
+                                        .Where(ech => ((ech.Content != null && ech.Content.Contains(search)) || (ech.Flock != null && ech.Flock.Name.Contains(search))) &&
+                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && CanViewEcho(ech) && ech.CommParentId == null)
+                                        .OrderByDescending(ech => ech.DateCreated);
+
+                ViewBag.NonComments = nonCommentEchoes;
+
+                var commentEchoes = db.Echoes
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.SentRelations)
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.ReceivedRelations)
+                                        .Include(ech => ech.User)
+                                            .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.CommParent)
+                                            .ThenInclude(prnt => prnt!.User)
+                                                .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.AmpParent)
+                                            .ThenInclude(ech => ech!.User)
+                                                .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.Interactions!)
+                                            .ThenInclude(i => i.User)
+                                                .ThenInclude(u => u!.ApplicationUser)
+                                        .Include(ech => ech.Flock)
+                                        .ToList()
+                                        .Where(ech => ((ech.Content != null && ech.Content.Contains(search)) || (ech.Flock != null && ech.Flock.Name.Contains(search))) &&
+                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && CanViewEcho(ech) && ech.CommParentId != null)
+                                        .OrderByDescending(ech => ech.DateCreated);
+
+                ViewBag.Comments = commentEchoes;
+
+                var flocks = db.Flocks
+                                .Include(f => f.Admin!)
+                                    .ThenInclude(a => a.ApplicationUser)
+                                .Include(f => f.Echos!)
+                                    .ThenInclude(e => e.User!)
+                                        .ThenInclude(u => u.ApplicationUser)
+                                .Where(fl => !fl.FlockStatus.Equals("deleted") && fl.Name.Contains(search))
+                                .OrderByDescending(ech => ech.DateCreated);
+
+                Dictionary<int, Echo?> echoes = [];
+                foreach (var fl in flocks)
+                {
+                    Echo? ech = db.Echoes
+                                    .Include(e => e.Flock)
+                                    .Where(e => e.FlockId == fl.Id && !e.IsRemoved && e.UserId != deletedUser!.Id && e.CommParentId == null)
+                                    .OrderByDescending(e => e.DateCreated)
+                                    .FirstOrDefault();
+
+                    echoes.TryAdd(fl.Id, ech);
+                }
+
+                ViewBag.Flocks = flocks;
+                ViewBag.EchoMap = echoes;
+
+                if (_userManager.GetUserId(User) != null)
+                {
+                    var userProfiles = db.UserProfiles
+                                        .Include(up => up.ApplicationUser)
+                                        .ToList()
+                                        .Where(up => CanViewPrivs(up) && !up.AccountStatus.Equals("deleted") && up.ApplicationUser!.UserName!.Contains(search) || up.DisplayName.Contains(search))
+                                        .OrderByDescending(up => up.JoinDate);
+                    ViewBag.Users = userProfiles;
+                }
+                else
+                {
+                    var userProfiles = db.UserProfiles
+                                        .Include(up => up.ApplicationUser)
+                                        .ToList()
+                                        .Where(up => up.AccountStatus.Equals("active") && (up.ApplicationUser!.UserName!.Contains(search) || up.DisplayName.Contains     (search)))
+                                        .OrderByDescending(up => up.JoinDate);
+                    ViewBag.Users = userProfiles;
+                }
+            }
+
+            ViewBag.SearchString = query;
+            ViewBag.Title = "Search Results";
+            SetAccessRights();
+            return View();
+        }
+
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
         public IActionResult New_Like(int EchoId)
@@ -129,69 +235,84 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             Interaction? inter = db.Interactions.Find(userId, EchoId);
+            bool canRebound = echo.UserId == _userManager.GetUserId(User) || echo.User!.AccountStatus.Equals("active") && !db.Relations.Any(r => (r.ReceiverId == userId && r.SenderId == echo.UserId) && r.Type == -1);
 
-            if (inter == null)
+            if (canRebound)
             {
-                // Create new interaction and rebound it
-                inter = new Interaction
+                if (inter == null)
                 {
-                    UserId = userId,
-                    EchoId = EchoId,
-                    Rebounded = true,
-                    ReboundedDate = DateTime.Now
-                };
-                db.Interactions.Add(inter);
-                echo.ReboundCount++;
-                
-                try
-                {
-                    db.SaveChanges();
-                }
-                catch (DbUpdateException)
-                {
-                    // Race condition: interaction was created by another request
-                    // Reload from database and toggle
-                    db.Entry(inter).State = EntityState.Detached;
-                    db.Entry(echo).State = EntityState.Detached;
-                    inter = db.Interactions.Find(userId, EchoId);
-                    echo = db.Echoes.Find(EchoId);
-                    if (inter != null && echo != null)
+                    // Create new interaction and rebound it
+                    inter = new Interaction
                     {
-                        inter.Rebounded = !inter.Rebounded;
-                        inter.ReboundedDate = inter.Rebounded ? DateTime.Now : null;
-                        echo.ReboundCount = inter.Rebounded ? echo.ReboundCount + 1 : echo.ReboundCount - 1;
+                        UserId = userId,
+                        EchoId = EchoId,
+                        Rebounded = true,
+                        ReboundedDate = DateTime.Now
+                    };
+                    db.Interactions.Add(inter);
+                    echo.ReboundCount++;
+
+                    try
+                    {
                         db.SaveChanges();
                     }
-                    else
+                    catch (DbUpdateException)
                     {
-                        return Json(new { success = false, error = "Error updating interaction" });
+                        // Race condition: interaction was created by another request
+                        // Reload from database and toggle
+                        db.Entry(inter).State = EntityState.Detached;
+                        db.Entry(echo).State = EntityState.Detached;
+                        inter = db.Interactions.Find(userId, EchoId);
+                        echo = db.Echoes.Find(EchoId);
+                        if (inter != null && echo != null)
+                        {
+                            inter.Rebounded = !inter.Rebounded;
+                            inter.ReboundedDate = inter.Rebounded ? DateTime.Now : null;
+                            echo.ReboundCount = inter.Rebounded ? echo.ReboundCount + 1 : echo.ReboundCount - 1;
+                            db.SaveChanges();
+                        }
+                        else
+                        {
+                            return Json(new { success = false, error = "Error updating interaction" });
+                        }
                     }
-                }
-            }
-            else
-            {
-                // Toggle rebound
-                if (inter.Rebounded)
-                {
-                    inter.Rebounded = false;
-                    inter.ReboundedDate = null;
-                    echo.ReboundCount--;
                 }
                 else
                 {
-                    inter.Rebounded = true;
-                    inter.ReboundedDate = DateTime.Now;
-                    echo.ReboundCount++;
+                    // Toggle rebound
+                    if (inter.Rebounded)
+                    {
+                        inter.Rebounded = false;
+                        inter.ReboundedDate = null;
+                        echo.ReboundCount--;
+                    }
+                    else
+                    {
+                        inter.Rebounded = true;
+                        inter.ReboundedDate = DateTime.Now;
+                        echo.ReboundCount++;
+                    }
+                    db.SaveChanges();
                 }
-                db.SaveChanges();
-            }
 
-            // Return JSON response for AJAX
-            return Json(new { 
-                success = true, 
-                isRebounded = inter.Rebounded, 
-                reboundCount = echo.ReboundCount 
-            });
+                // Return JSON response for AJAX
+                return Json(new
+                {
+                    success = true,
+                    isRebounded = inter.Rebounded,
+                    reboundCount = echo.ReboundCount
+                });
+            }
+            else
+            {
+                return Json(new
+                {
+                    success = false,
+                    error = "Cannot rebound Private Account",
+                    isRebounded = false,
+                    reboundCount = echo.ReboundCount
+                });
+            }
         }
 
         [HttpPost]
@@ -274,6 +395,27 @@ namespace BAtwitter_DAW_2526.Controllers
                 isBookmarked = inter.Bookmarked, 
                 bookmarksCount = echo.BookmarksCount 
             });
+        }
+
+        // Other methods
+        private bool CanViewEcho(Echo echo)
+        {
+            return User.IsInRole("Admin") || echo.User!.AccountStatus.Equals("active")
+               || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
+               || echo.UserId == _userManager.GetUserId(User);
+        }
+
+        private bool CanViewPrivs(UserProfile usr)
+        {
+            return User.IsInRole("Admin") || _userManager.GetUserId(User) == usr.ApplicationUser!.Id
+                || (usr.AccountStatus.Equals("private") && usr.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
+                || (usr.AccountStatus.Equals("active") && !usr.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1));
+        }
+
+        private void SetAccessRights()
+        {
+            ViewBag.CurrentUser = _userManager.GetUserId(User);
+            ViewBag.IsAdmin = User.IsInRole("Admin");
         }
     }
 }

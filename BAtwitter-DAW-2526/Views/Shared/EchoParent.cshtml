@@ -18,6 +18,7 @@
             isBookmarked = inter.Bookmarked;
         }
     }
+    bool showLock = Model.User!.AccountStatus.Equals("private");
 }
 
 <div class="ms-4 mt-3">
@@ -47,8 +48,9 @@
                         }
 
                         <div class="d-flex flex-column me-3">
-                            <span class="fw-semibold">
+                            <span class="fw-semibold d-flex align-items-center gap-1">
                                 @(Model.User?.DisplayName ?? "Unknown user")
+                                @if (showLock) { <i class="bi bi-lock-fill fs-6"></i> }
                             </span>
 
                             @if (Model.User?.ApplicationUser != null)

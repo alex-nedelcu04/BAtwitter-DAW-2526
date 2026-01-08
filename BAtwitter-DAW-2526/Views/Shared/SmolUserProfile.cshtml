@@ -1,0 +1,58 @@
+﻿@model BAtwitter_DAW_2526.Models.UserProfile
+
+@{
+    bool showLock = Model.AccountStatus.Equals("private") || (ViewBag.IsPrivateAccount != null && ViewBag.IsPrivateAccount == true);
+    string path = Context.Request.Path.Value ?? "";
+    bool inFollowers = path.Contains("UserProfiles/Followers");
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                @if (!string.IsNullOrEmpty(Model.PfpLink))
+                {
+                    @if (Model.ApplicationUser != null)
+                    {
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser.UserName })" onclick="event.stopPropagation();">
+                            <img src="@Model.PfpLink" alt="userprofile Profile Picture"
+                                 class="rounded-circle border border-4 border-white"
+                                 style="width: 60px; height: 60px; object-fit: cover; background-color: white;" />
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Model.PfpLink" onclick="event.stopPropagation();">
+                            <img src="@Model.PfpLink" alt="userprofile Profile Picture"
+                                 class="rounded-circle border border-4 border-white"
+                                 style="width: 60px; height: 60px; object-fit: cover; background-color: white;" />
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="rounded-circle border border-4 border-white bg-secondary"
+                         style="width: 60px; height: 60px; background-color: white;"></div>
+                }
+
+                <div class="ms-3">
+                    <h4 class="fw-bold mb-0 d-flex align-items-center gap-1">
+                        @(Model.DisplayName)
+                        @if(showLock) { <i class="bi bi-lock-fill fs-5"></i> }
+                        <small class="h6 text-muted mb-0">@Model.Pronouns </small>
+                    </h4>
+                    <h5 class="text-muted mb-0"> @@@Model.ApplicationUser?.UserName</h5>
+                </div>
+            </div>
+
+            @if (!inFollowers || (Model.Id != ViewBag.CurrentUser && Model.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1)))
+            {
+                <div class="d-flex">
+                    <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id">
+                        <button class="btn btn-danger" type="submit">Unfollow</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</div>

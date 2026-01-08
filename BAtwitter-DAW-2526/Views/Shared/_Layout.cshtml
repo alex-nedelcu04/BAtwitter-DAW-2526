@@ -72,7 +72,7 @@
             {
                 <li class="nav-item">
                     <a class="nav-link" asp-area="" asp-controller="Echoes" asp-action="Bookmarks">
-                        <i class="bi bi-bookmark-heart me-2"></i>Bookmarks
+                        <i class="bi bi-bookmark me-2"></i>Bookmarks
                     </a>
                 </li>
             }
@@ -101,10 +101,10 @@
     <header class="app-topbar bg-body-tertiary border-bottom">
         <div class="h-100 px-3 d-flex align-items-center justify-content-between">
             <div class="d-flex flex-row justify-content-between">
-                <form class="app-search" method="get" asp-controller="Echoes" asp-action="Index">
+                <form class="app-search" method="get" asp-controller="Interactions" asp-action="Search">
                     <div class="input-group">
                         <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                        <input type="text" name="q" class="form-control" placeholder="Search..." />
+                        <input type="text" name="query" placeholder="Search..." class="form-control" value="@ViewBag.SearchString" />
                     </div>
                 </form>
 

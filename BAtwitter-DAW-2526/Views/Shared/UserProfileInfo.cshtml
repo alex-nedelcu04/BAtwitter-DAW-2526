@@ -5,6 +5,7 @@
     bool showRecent = !path.Contains("Users/");
     bool isIndexAdmin = path.Contains("UserProfiles/IndexAdmin");
     bool isShow = path.Contains("UserProfiles/Show");
+    bool showLock = Model.AccountStatus.Equals("private") || (ViewBag.IsPrivateAccount != null && ViewBag.IsPrivateAccount == true);
 }
 
 <div class="card shadow-sm mb-4 userprofile-card" data-userprofile-url="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser?.UserName })" style="cursor: pointer;">
@@ -33,7 +34,7 @@
                     @if (Model.ApplicationUser != null)
                     {
                         <a href="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser.UserName })" onclick="event.stopPropagation();">
-                            <img src="@Model.PfpLink" alt="userprofile Profile Picture" 
+                            <img src="@Model.PfpLink" alt="userprofile Profile Picture"
                                  class="rounded-circle border border-4 border-white"
                                  style="width: 120px; height: 120px; object-fit: cover; background-color: white;" />
                         </a>
@@ -41,7 +42,7 @@
                     else
                     {
                         <a href="@Model.PfpLink" onclick="event.stopPropagation();">
-                            <img src="@Model.PfpLink" alt="userprofile Profile Picture" 
+                            <img src="@Model.PfpLink" alt="userprofile Profile Picture"
                                  class="rounded-circle border border-4 border-white"
                                  style="width: 120px; height: 120px; object-fit: cover; background-color: white;" />
                         </a>
@@ -49,20 +50,28 @@
                 }
                 else
                 {
-                    <div class="rounded-circle border border-4 border-white bg-secondary" 
+                    <div class="rounded-circle border border-4 border-white bg-secondary"
                          style="width: 120px; height: 120px; background-color: white;"></div>
                 }
-                
+
                 <div class="ms-3 mt-5">
-                    <h4 class="fw-bold mb-0">@Model.DisplayName  <small class="h6 text-muted mb-0">@Model.Pronouns </small></h4>
+                    <h4 class="fw-bold mb-0 d-flex align-items-center gap-1">
+                        @(Model.DisplayName)
+                        @if (showLock) { <i class="bi bi-lock-fill fs-5"></i> }
+                        <small class="h6 text-muted mb-0">@Model.Pronouns </small>
+                    </h4>
                     <h5 class="text-muted mb-0"> @@@Model.ApplicationUser?.UserName</h5>
                 </div>
-                
-                @if (Model.AccountStatus.Equals("private") || (ViewBag.IsPrivateAccount != null && ViewBag.IsPrivateAccount == true))
+
+                @if (isShow)
                 {
-                    <div class="ms-1 mt-4 fs-5 d-flex flex-column align-items-center justify-content-center">
-                        <i class="bi bi-lock-fill"></i>
+                    <div class="ms-3 mt-4 fs-6 align-items-center">
+                        @(ViewBag.FollowsCount)
+                        <a class="fw-semibold text-decoration-none link-body-emphasis" asp-controller="UserProfiles" asp-action="Follows" asp-route-username="@Model.ApplicationUser!.UserName" onclick="event.stopPropagation();">following </a>
+                        &bull; @(ViewBag.FollowersCount)
+                        <a class="fw-semibold text-decoration-none link-body-emphasis" asp-controller="UserProfiles" asp-action="Followers" asp-route-username="@Model.ApplicationUser.UserName" onclick="event.stopPropagation();">followers </a>
                     </div>
+
                 }
             </div>
 
@@ -70,8 +79,6 @@
                 <p class="mb-1">joined : @Model.JoinDate.ToString("MMM d, yyyy")</p>
 
             </div>
-
-
         </div>
 
         <!-- DESCRIPTION -->
@@ -97,7 +104,7 @@
                 else
                 {
                     <div class="d-flex flex-row justify-content-between mt-3">
-                        <form method="post" asp-controller="UserProfiles" asp-action="MarkAsDeletedAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                        <form method="post" asp-controller="UserProfiles" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                             <button class="btn btn-warning" type="submit">Mark User Profile as Deleted</button>
                         </form>
 
@@ -171,7 +178,7 @@
                             </form>
                         }
                         <div class="d-flex flex-row justify-content-between">
-                            <form method="post" asp-controller="UserProfiles" asp-action="MarkAsDeletedAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                            <form method="post" asp-controller="UserProfiles" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                                 <button class="btn btn-warning" type="submit">Mark User Profile as Deleted</button>
                             </form>
 

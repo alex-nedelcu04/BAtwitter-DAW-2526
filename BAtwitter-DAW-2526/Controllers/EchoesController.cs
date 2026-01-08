@@ -24,7 +24,6 @@ namespace BAtwitter_DAW_2526.Controllers
             _env = env;
         }
         // [HttpGet] care se executa implicit
-        [Authorize(Roles = "User,Admin")]
         public IActionResult Index()
         {
             var deletedUserId = db.Users
@@ -34,26 +33,10 @@ namespace BAtwitter_DAW_2526.Controllers
 
             var currentUserId = _userManager.GetUserId(User);
 
-            var followedUserIds = db.Relations
-                                .Where(r => r.SenderId == currentUserId && r.Type == 1)
-                                .Select(r => r.ReceiverId)
-                                .ToList();
-
-            var activeUserIds = db.UserProfiles
-                                .Where(u => u.AccountStatus == "active")
-                                .Select(u => u.Id)
-                                .ToList();
-
-            // Lista cu utilizatorii privați pe care NU îi urmărești
-            var privateUserIdsNotFollowed = db.UserProfiles
-                                .Where(u => u.AccountStatus == "private" && !followedUserIds.Contains(u.Id) && u.Id != currentUserId)
-                                .Select(u => u.Id)
-                                .ToList();
-
-            // Echo-uri normale (nu sunt comentarii)
-            var normalEchoes = db.Echoes
-                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null 
-                                        && (ech.UserId == currentUserId || activeUserIds.Contains(ech.UserId) || followedUserIds.Contains(ech.UserId)))
+            if (currentUserId == null)
+            {
+                var echoes = db.Echoes
+                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null && ech.User!.AccountStatus.Equals("active"))
                                 .Include(ech => ech.User)
                                     .ThenInclude(u => u!.ApplicationUser)
                                 .Include(ech => ech.AmpParent)
@@ -63,62 +46,111 @@ namespace BAtwitter_DAW_2526.Controllers
                                     .ThenInclude(i => i.User)
                                         .ThenInclude(u => u!.ApplicationUser)
                                 .Include(ech => ech.Flock)
+                                .OrderByDescending(ech => ech.DateCreated)
                                 .ToList();
 
-            // lista care include echo-urile normale și echo-urile cu rebound-uri
-            var feedItems = new List<(Echo Echo, UserProfile? ReboundUser)>();
+                var feedItems = new List<(Echo Echo, UserProfile? ReboundUser)>();
 
-  
-            foreach (var echo in normalEchoes)
-            {
-                feedItems.Add((echo, null));
-            }
-
-            // echo-uri cu rebound + info user care a facut rebound
-            // NU arăta rebound-uri făcute de utilizatori privați pe care nu îi urmezi (ex: foden47)
-            var reboundInteractions = db.Interactions
-                .Where(i => i.Rebounded &&
-                            i.Echo != null &&
-                            !i.Echo.IsRemoved &&
-                            i.Echo.UserId != deletedUserId &&
-                            i.Echo.CommParentId == null &&
-                            !privateUserIdsNotFollowed.Contains(i.UserId) &&
-                            (i.UserId == currentUserId || 
-                             i.Echo.UserId == currentUserId || 
-                             followedUserIds.Contains(i.Echo.UserId) || 
-                             followedUserIds.Contains(i.UserId)))
-                .Include(i => i.Echo!)
-                    .ThenInclude(e => e!.User)
-                        .ThenInclude(u => u!.ApplicationUser)
-                .Include(i => i.Echo!.AmpParent)
-                    .ThenInclude(ech => ech!.User)
-                        .ThenInclude(u => u!.ApplicationUser)
-                .Include(i => i.Echo!.Interactions!)
-                    .ThenInclude(inter => inter.User)
-                        .ThenInclude(u => u!.ApplicationUser)
-                .Include(i => i.Echo!.Flock)
-                .Include(i => i.User!)
-                    .ThenInclude(u => u!.ApplicationUser)
-                .OrderByDescending(i => i.ReboundedDate)
-                .ToList();
-
-            foreach (var interaction in reboundInteractions)
-            {
-                if (interaction.Echo != null && interaction.User != null)
+                foreach (var echo in echoes)
                 {
-                    feedItems.Add((interaction.Echo, interaction.User));
+                    feedItems.Add((echo, null));
                 }
+
+                ViewBag.FeedItems = feedItems;
+                ViewBag.CurrentUser = currentUserId;
             }
+            else
+            {
+                var followedUserIds = db.Relations
+                                    .Where(r => r.SenderId == currentUserId && r.Type == 1)
+                                    .Select(r => r.ReceiverId)
+                                    .ToList();
 
-            // sortare dupa data de creare a echo-ului sau data rebound-ului (dacă e rebound)
-            var sortedFeedItems = feedItems
-                .OrderByDescending(item => item.ReboundUser != null
-                    ? item.Echo.Interactions?.FirstOrDefault(i => i.UserId == item.ReboundUser.Id && i.Rebounded)?.ReboundedDate ?? item.Echo.DateCreated
-                    : item.Echo.DateCreated)
-                .ToList();
+                var activeUserIds = db.UserProfiles
+                                    .Where(u => u.AccountStatus == "active")
+                                    .Select(u => u.Id)
+                                    .ToList();
 
-            ViewBag.FeedItems = sortedFeedItems;
-            ViewBag.CurrentUser = currentUserId;
+                // Lista cu utilizatorii privați pe care NU îi urmărești
+                var privateUserIdsNotFollowed = db.UserProfiles
+                                    .Where(u => u.AccountStatus == "private" && !followedUserIds.Contains(u.Id) && u.Id != currentUserId)
+                                    .Select(u => u.Id)
+                                    .ToList();
+
+                // Echo-uri normale (nu sunt comentarii)
+                var normalEchoes = db.Echoes
+                                    .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null
+                                            && (ech.UserId == currentUserId || activeUserIds.Contains(ech.UserId) || followedUserIds.Contains(ech.UserId)))
+                                    .Include(ech => ech.User)
+                                        .ThenInclude(u => u!.SentRelations)
+                                    .Include(ech => ech.User)
+                                        .ThenInclude(u => u!.ReceivedRelations)
+                                    .Include(ech => ech.User)
+                                        .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(ech => ech.AmpParent)
+                                        .ThenInclude(ech => ech!.User)
+                                            .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(ech => ech.Interactions!)
+                                        .ThenInclude(i => i.User)
+                                            .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(ech => ech.Flock)
+                                    .ToList();
+
+                // lista care include echo-urile normale și echo-urile cu rebound-uri
+                var feedItems = new List<(Echo Echo, UserProfile? ReboundUser)>();
+
+
+                foreach (var echo in normalEchoes)
+                {
+                    feedItems.Add((echo, null));
+                }
+
+                // echo-uri cu rebound + info user care a facut rebound
+                // NU arăta rebound-uri făcute de utilizatori privați pe care nu îi urmezi (ex: foden47)
+                var reboundInteractions = db.Interactions
+                    .Where(i => i.Rebounded &&
+                                i.Echo != null &&
+                                !i.Echo.IsRemoved &&
+                                i.Echo.UserId != deletedUserId &&
+                                i.Echo.CommParentId == null &&
+                                !privateUserIdsNotFollowed.Contains(i.UserId) &&
+                                (i.UserId == currentUserId ||
+                                 i.Echo.UserId == currentUserId ||
+                                 followedUserIds.Contains(i.Echo.UserId) ||
+                                 followedUserIds.Contains(i.UserId)))
+                    .Include(i => i.Echo!)
+                        .ThenInclude(e => e!.User)
+                            .ThenInclude(u => u!.ApplicationUser)
+                    .Include(i => i.Echo!.AmpParent)
+                        .ThenInclude(ech => ech!.User)
+                            .ThenInclude(u => u!.ApplicationUser)
+                    .Include(i => i.Echo!.Interactions!)
+                        .ThenInclude(inter => inter.User)
+                            .ThenInclude(u => u!.ApplicationUser)
+                    .Include(i => i.Echo!.Flock)
+                    .Include(i => i.User!)
+                        .ThenInclude(u => u!.ApplicationUser)
+                    .OrderByDescending(i => i.ReboundedDate)
+                    .ToList();
+
+                foreach (var interaction in reboundInteractions)
+                {
+                    if (interaction.Echo != null && interaction.User != null)
+                    {
+                        feedItems.Add((interaction.Echo, interaction.User));
+                    }
+                }
+
+                // sortare dupa data de creare a echo-ului sau data rebound-ului (dacă e rebound)
+                var sortedFeedItems = feedItems
+                    .OrderByDescending(item => item.ReboundUser != null
+                        ? item.Echo.Interactions?.FirstOrDefault(i => i.UserId == item.ReboundUser.Id && i.Rebounded)?.ReboundedDate ?? item.Echo.DateCreated
+                        : item.Echo.DateCreated)
+                    .ToList();
+
+                ViewBag.FeedItems = sortedFeedItems;
+                ViewBag.CurrentUser = currentUserId;
+            }
 
             if (TempData.ContainsKey("message"))
             {
@@ -174,7 +206,6 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // [HttpGet] care se executa implicit
-        [Authorize(Roles = "User,Admin")]
         public IActionResult Amplifiers(int id)
         {
             var deletedUserId = db.Users
@@ -183,14 +214,21 @@ namespace BAtwitter_DAW_2526.Controllers
                 .FirstOrDefault() ?? string.Empty;
 
             var echoes = db.Echoes
-                            .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.AmpParentId == id) // Filtreaza echo-urile sterse
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.SentRelations)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ReceivedRelations)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
                             .Include(ech => ech.AmpParent)
                                 .ThenInclude(ech => ech!.User)
                                     .ThenInclude(u => u!.ApplicationUser)
-                            .Include(ech => ech.Interactions)
+                            .Include(ech => ech.Interactions!)
+                                .ThenInclude(i => i.User)
+                                    .ThenInclude(u => u!.ApplicationUser)
                             .Include(ech => ech.Flock)
+                            .ToList()
+                            .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.AmpParentId == id && CanViewEcho(ech))
                             .OrderByDescending(ech => ech.DateCreated);
 
             ViewBag.Echoes = echoes;
@@ -216,19 +254,25 @@ namespace BAtwitter_DAW_2526.Controllers
                 .FirstOrDefault() ?? string.Empty;
 
             var bookmarkEchoes = db.Interactions
-                                    .Where(i => i.Bookmarked && i.UserId == _userManager.GetUserId(User) && !i.Echo!.IsRemoved && i.Echo.UserId != deletedUserId)
+                                    .Where(i => i.Bookmarked && i.UserId == _userManager.GetUserId(User) && !i.Echo!.IsRemoved && i.Echo.UserId != deletedUserId &&
+                                                 (User.IsInRole("Admin") || i.Echo.User!.AccountStatus.Equals("active")
+                                                    || (i.Echo.User!.AccountStatus.Equals("private") && i.Echo.User!.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
+                                                    || i.Echo.UserId == _userManager.GetUserId(User)))
                                     .OrderByDescending(i => i.BookmarkedDate)
                                     .Include(i => i.Echo!.User)
                                         .ThenInclude(u => u!.ApplicationUser)
+                                    .Include(i => i.Echo!.User)
+                                        .ThenInclude(u => u!.SentRelations)
+                                    .Include(i => i.Echo!.User)
+                                        .ThenInclude(u => u!.ReceivedRelations)
                                     .Include(i => i.Echo!.AmpParent)
                                         .ThenInclude(ech => ech!.User)
                                             .ThenInclude(u => u!.ApplicationUser)
                                     .Include(i => i.Echo!.Interactions)
                                     .Include(i => i.Echo!.Flock)
-                                    .Select(i => i.Echo)
-                                    .ToList();
+                                    .Select(i => i.Echo);
                                     // useful! - .AsNoTracking() - lista / rezultatul in sine devine readonly si nu poate fi modificat de db.SaveChanges();
-                                    
+
             ViewBag.Title = "Bookmarks";
             ViewBag.Echoes = bookmarkEchoes;
             SetAccessRights();
@@ -236,7 +280,6 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
         // [HttpGet] se executa implicit
-        [Authorize(Roles = "User,Admin")]
         public IActionResult Show(int id)
         {
             Echo? echo = db.Echoes
@@ -252,7 +295,12 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .ThenInclude(comm => comm.Interactions)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
-                            .Where(ech => ech.Id == id)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ReceivedRelations)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.SentRelations)
+                            .ToList()
+                            .Where(ech => ech.Id == id && CanViewEcho(ech))
                             .FirstOrDefault();
 
             if (echo is null)
@@ -270,6 +318,10 @@ namespace BAtwitter_DAW_2526.Controllers
                 Echo? parent = db.Echoes
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ReceivedRelations)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.SentRelations)
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
                             .Where(ech => ech.Id == curr.CommParentId)
@@ -880,6 +932,11 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.Interactions)
                             .Include(ech => ech.Flock)
                             .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.ReceivedRelations)
+                            .Include(ech => ech.User)
+                                .ThenInclude(u => u!.SentRelations)
                             .Where(ech => ech.CommParentId == echo.Id)
                             .ToList();
             echo.Comments = comments;
@@ -1017,6 +1074,14 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 System.IO.File.Delete(physicalPath);
             }
+        }
+
+        // get if echo poster has a good relation
+        private bool CanViewEcho(Echo echo)
+        {
+            return User.IsInRole("Admin") || echo.User!.AccountStatus.Equals("active")
+               || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
+               || echo.UserId == _userManager.GetUserId(User);
         }
     }
 }

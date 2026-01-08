@@ -18,14 +18,27 @@ namespace BAtwitter_DAW_2526.Controllers
             _userManager = usrm;
         }
 
-        // TO DO !!!!!! - UNFOLLOW (similar cu FollowDirect pretty much, doar ca nu creezi relatia, o stergi)
-        // Kind reminder pt mine: Retweet si quote nu se poate la postarile unui cont privat la care nu ai follow
-        // O sa trebuiasca si un view pt followeri si following
-        // De sters alertele de la inceputul paginii, sa ramana doar acolo jos
-        // Am uitat sa fac schimbarea aia cu numele paginii sa fei scris langa search
-        // inca se vad postarile unui user privat in profilul lui
-        // adminul paginii nu are buton de follow, apar tot alea de mark as deleted si delete permanently
-       
+        // TO DO !!!!!!
+        //          DONE - UNFOLLOW (similar cu FollowDirect pretty much, doar ca nu creezi relatia, o stergi)
+        //          DONE - Kind reminder pt mine: Retweet si quote nu se poate la postarile unui cont privat la care nu ai follow
+        //          DONE - O sa trebuiasca si un view pt followeri si following
+        //          DONE - De sters alertele de la inceputul paginii, sa ramana doar acolo jos
+        //          DONE - Am uitat sa fac schimbarea aia cu numele paginii sa fei scris langa search
+        //          DONE - inca se vad postarile unui user privat in profilul lui
+        //          DONE - adminul paginii nu are buton de follow, apar tot alea de mark as deleted si delete permanently
+        //          DONE - Delete Flock Admin => Adminul site-ului devine adminul flockului
+        //          DONE - ADD SEARCH METHOD
+        // Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului cu un searchbar
+        // Make regular user delete not assign posts to deleted user, only admin delete
+        // Add click event to follows/followers display name / username
+        // No login into "deleted" accounts
+        // Block Users / maybe Flocks?
+        // ADD AI FUNCTIONALITY
+        // When UnfollowUser, if from Followers / Following redirect to own page instead
+        // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
+        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, LoginPartial modificat, SCOS HOME CONTROLLER,
+        //                                     poate sa ne mai uitam peste taburile din sidebar, vedem ce facem cu paginile de Identity,
+        //                                     formul de new/edit echo sa arate bine + add a new comment button
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]

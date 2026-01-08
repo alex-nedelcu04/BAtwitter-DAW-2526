@@ -1,0 +1,54 @@
+﻿
+<ul class="nav nav-tabs mb-3" id="tabs_searchResults" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#echoes" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">Echoes</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Comments</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#flocks" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Flocks</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#user-profiles" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">User Profiles</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs_searchResults_content">
+    <div class="tab-pane fade show active" id="echoes" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+        @if (ViewBag.NonComments != null)
+        {
+            @foreach (var nonComm in ViewBag.NonComments)
+            {
+                <partial name="EchoInfo" model="nonComm" />
+            }
+        }
+    </div>
+    <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+        @if (ViewBag.Comments != null)
+        {
+            @foreach (var comm in ViewBag.Comments)
+            {
+                <partial name="EchoInfo" model="comm" />
+            }
+        }
+    </div>
+    <div class="tab-pane fade" id="flocks" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+        @if (ViewBag.Flocks != null)
+        {
+            @foreach (var flock in ViewBag.Flocks)
+            {
+                <partial name="FlockInfo" model="flock" />
+            }
+        }
+    </div>
+    <div class="tab-pane fade" id="user-profiles" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+        @if (ViewBag.Users != null)
+        {
+            @foreach (var usrpf in ViewBag.Users)
+            {
+                <partial name="UserProfileInfo" model="usrpf" />
+            }
+        }
+    </div>
+</div>

@@ -18,6 +18,7 @@
             isBookmarked = inter.Bookmarked;
         }
     }
+    bool showLock = Model.User!.AccountStatus.Equals("private");
 }
 
 @functions {
@@ -32,6 +33,13 @@
         }
         return false;
     }
+    
+    bool CanViewEcho(Echo echo)
+    {
+        return echo.User!.AccountStatus.Equals("active")
+           || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1))
+           || echo.UserId == ViewBag.CurrentUser;
+    }
 }
 
 <div class="ms-4 mt-3">
@@ -39,6 +47,12 @@
     {
         <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
             This Echo has been removed.
+        </small>
+    }
+    else if (!CanViewEcho(Model) && !User.IsInRole("Admin"))
+    {
+        <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+            This Echo was sent from a private account you do not follow.
         </small>
     }
     else
@@ -61,8 +75,9 @@
                         }
 
                         <div class="d-flex flex-column me-3">
-                            <span class="fw-semibold">
+                            <span class="fw-semibold d-flex align-items-center gap-1">
                                 @(Model.User?.DisplayName ?? "Unknown user")
+                                @if (showLock) { <i class="bi bi-lock-fill fs-6"></i> }
                             </span>
 
                             @if (Model.User?.ApplicationUser != null)
@@ -193,6 +208,15 @@
                     </div>
                 }
 
+                @if (Model.AmpParent != null)
+                {
+                    <div class="d-flex justify-content-center w-100">
+                        <div style="width: 92.5%">
+                            <partial name="AmplifyWindow" model="@Model.AmpParent" />
+                        </div>
+                    </div>
+                }
+
                 <!-- FOOTER: interacțiuni + created at -->
                 <div class="d-flex justify-content-between align-items-center mt-2">
 
@@ -208,30 +232,49 @@
                         </span>
 
                         <span class="me-3 d-flex align-items-center">
-                            <form method="post" asp-controller="Interactions" asp-action="New_Rebound" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="rebound">
-                                <input type="hidden" name="EchoId" value="@Model.Id" />
-                                <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                                    <i class="bi bi-arrow-repeat me-1 rebound-icon @(isRebounded ? "text-success" : "")"></i> <span class="rebound-count">@Model.ReboundCount</span>
-                                </button>
-                            </form>
+                            @if (Model.UserId == ViewBag.CurrentUser || Model.User!.AccountStatus.Equals("active") && !Model.User!.SentRelations.Any(r => r.ReceiverId == ViewBag.CurrentUser && r.Type == -1))
+                            {
+                                <form method="post" asp-controller="Interactions" asp-action="New_Rebound" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="rebound">
+                                    <input type="hidden" name="EchoId" value="@Model.Id" />
+                                    <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                                        <i class="bi bi-arrow-repeat me-1 rebound-icon @(isRebounded ? "text-success" : "")"></i> <span class="rebound-count">@Model.ReboundCount</span>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <i class="bi bi-arrow-repeat me-1 text-opacity-25"></i> <span class="text-opacity-25">@Model.ReboundCount</span>
+                            }
                         </span>
 
                         <span class="me-3 d-flex align-items-center">
-                            <form method="get" asp-controller="Echoes" asp-action="New">
-                                <input type="hidden" name="id" value="@Model.Id" />
-                                <input type="hidden" name="type" value="@typeAmp" />
-                                <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                                    <i class="bi bi-megaphone me-1"></i>
-                                    @if (!showButtons || @Model.AmplifierCount == 0)
+                            @if (Model.UserId == ViewBag.CurrentUser || Model.User!.AccountStatus.Equals("active") && !Model.User!.SentRelations.Any(r => r.ReceiverId == ViewBag.CurrentUser && r.Type == -1))
+                            {
+                                <form method="get" asp-controller="Echoes" asp-action="New">
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <input type="hidden" name="type" value="@typeAmp" />
+                                    <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                                        <i class="bi bi-megaphone me-1"></i>
+                                        @if (!showButtons || @Model.AmplifierCount == 0)
+                                        {
+                                            @Model.AmplifierCount
+                                        }
+                                    </button>
+                                    @if (showButtons && @Model.AmplifierCount != 0)
                                     {
-                                        @Model.AmplifierCount
+                                        <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
                                     }
-                                </button>
-                                @if (showButtons && @Model.AmplifierCount != 0)
+                                </form>
+                            }
+                            else
+                            {
+                                <i class="bi bi-megaphone me-1 text-muted text-opacity-25"></i>
+                                @if (!showButtons || @Model.AmplifierCount == 0) { <span class="text-opacity-25">@Model.AmplifierCount</span> }
+                                else
                                 {
-                                    <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
+                                    <a class="text-muted text-decoration-none link-underline link-underline-opacity-0 text-opacity-25" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
                                 }
-                            </form>
+                            }
                         </span>
 
                         <span class="me-3 d-flex align-items-center">
@@ -258,34 +301,22 @@
                     </div>
                 </div>
 
-                @*
+                
                 @if (User.IsInRole("Admin"))
                 {
                     @if (Model.IsRemoved)
                     {
-                        <div class="d-flex flex-row justify-content-end mt-3">
-                            <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
-                            </form>
-                        </div>
-
                         <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
                             This Echo has been removed.
                         </small>
                     }
-                    else
+                    else if (!CanViewEcho(Model))
                     {
-                        <div class="d-flex flex-row justify-content-between mt-3">
-                            <form method="post" asp-controller="Echoes" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-warning" type="submit">Mark Echo as Deleted</button>
-                            </form>
-
-                            <form method="post" asp-controller="Echoes" asp-action="DeleteAdmin" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-danger" type="submit">Permanently Delete Echo</button>
-                            </form>
-                        </div>
+                        <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+                            This Echo was sent from a private account you do not follow.
+                        </small>
                     }
-                }*@
+                }
             </div>
         </div>
     }

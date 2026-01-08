@@ -1,0 +1,9 @@
+﻿@model BAtwitter_DAW_2526.Models.UserProfile
+
+@if (ViewBag.Follows != null)
+{
+    @foreach (var follow in ViewBag.Follows)
+    {
+        <partial name="SmolUserProfile" model="follow" />
+    }
+}
