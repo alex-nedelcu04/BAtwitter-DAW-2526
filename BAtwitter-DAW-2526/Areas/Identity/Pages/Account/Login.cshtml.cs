@@ -15,20 +15,23 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using BAtwitter_DAW_2526.Data;
 
 namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
     {
+        private readonly ApplicationDbContext db;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ILogger<LoginModel> logger, ApplicationDbContext context)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
+            db = context;
         }
 
         /// <summary>
@@ -115,6 +118,13 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
 
                 var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null)
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    return Page();
+                }
+
+                var userProfile = db.UserProfiles.Where(u => u.Id == user.Id).FirstOrDefault();
+                if (userProfile.AccountStatus.Equals("deleted"))
                 {
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();

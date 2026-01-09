@@ -7,10 +7,46 @@
 
                 <div asp-validation-summary="All" class="text-danger"></div>
 
+                <input type="hidden" asp-for="AdminId" id="SelectedUserId" value="@ViewBag.PreselectedUserId" />
+
                 <div class="mb-3">
                     <label asp-for="Name" class="form-label">Flock Name</label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Select Admin</label>
+
+                    <div class="dropdown w-100">
+                        <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="userDropdownButton" data-bs-toggle="dropdown">
+                            -- Select a User --
+                        </button>
+
+                        <!-- ⬇️ max-height + scroll added here -->
+                        <div class="dropdown-menu w-100 p-2 user-dropdown-menu">
+
+                            <!-- Filter -->
+                            <div class="sticky-top p-2 bg-body">
+                                <input type="text" class="form-control mb-2" placeholder="Search users..." id="userFilter" />
+                            </div>
+
+                            @foreach (dynamic user in ViewBag.Users)
+                            {
+                                <button type="button" class="dropdown-item d-flex align-items-center user-item" data-user-id="@user.Id" data-display-name="@user.DisplayName" data-search="@($"{user.UserName} {user.DisplayName}".ToLower())">
+
+                                    <img src="@user.PfpLink" class="rounded-circle me-2" width="32" height="32" />
+
+                                    <div class="text-start">
+                                        <div class="fw-semibold">@user.DisplayName</div>
+                                        <small class="text-muted">@("@" + user.UserName)</small>
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <span asp-validation-for="AdminId" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -89,8 +125,60 @@
     </div>
 </div>
 
+<style>
+    .user-dropdown-menu {
+        max-height: 320px; /* 5 items */
+        overflow-y: auto;
+    }
+
+    /* Optional: highlight preselected item */
+    .user-dropdown-menu .user-item.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    /* Sticky search bar style (already set by sticky-top) */
+    .user-dropdown-menu .sticky-top {
+        z-index: 10;
+    }
+</style>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const filterInput = document.getElementById("userFilter");
+        const userItems = document.querySelectorAll(".user-item");
+        const hiddenInput = document.getElementById("SelectedUserId");
+        const dropdownButton = document.getElementById("userDropdownButton");
+
+        filterInput.addEventListener("keyup", function () {
+            const value = this.value.toLowerCase();
+            userItems.forEach(item => {
+                item.style.display = item.dataset.search.includes(value) ? "" : "none";
+            });
+        });
+
+        userItems.forEach(item => {
+            item.addEventListener("click", function () {
+                hiddenInput.value = this.dataset.userId;
+                dropdownButton.innerText = this.dataset.displayName;
+            });
+        });
+
+        const preselectedUserId = "@ViewBag.PreselectedUserId";
+
+        if (preselectedUserId) {
+            const preselectedItem = document.querySelector(
+                `.user-item[data-user-id='${preselectedUserId}']`
+            );
+
+            if (preselectedItem) {
+                hiddenInput.value = preselectedUserId;
+                dropdownButton.innerText = preselectedItem.dataset.displayName;
+                preselectedItem.classList.add("active");
+            }
+        }
+    </script>
     <script>
         // Profile Picture Preview
         const pfpInput = document.getElementById('pfp');

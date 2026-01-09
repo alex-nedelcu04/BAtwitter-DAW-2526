@@ -232,6 +232,17 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
+                var users = db.UserProfiles
+                               .Include(u => u.ApplicationUser)
+                               .Include(u => u.SentRelations)
+                               .Include(u => u.ReceivedRelations)
+                               .ToList()
+                               .Where(u => CanViewProfile(u))
+                               .Select(u => new { u.Id, UserName = u.ApplicationUser!.UserName!, u.DisplayName, u.PfpLink });
+
+                ViewBag.Users = users;
+                ViewBag.PreselectedUserId = flock.AdminId;
+
                 ViewBag.Title = "Edit Flock";
                 SetAccessRights();
                 return View(flock);
@@ -794,6 +805,13 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
             }
+        }
+
+        private bool CanViewProfile(UserProfile user)
+        {
+            return !user.AccountStatus.Equals("deleted") && (User.IsInRole("Admin") || user.AccountStatus.Equals("active") || user.Id == _userManager.GetUserId(User)
+               || (!user.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1))
+               || (user.AccountStatus.Equals("private") && user.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1)));
         }
     }
 }

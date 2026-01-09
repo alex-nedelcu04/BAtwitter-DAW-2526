@@ -28,17 +28,18 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - adminul paginii nu are buton de follow, apar tot alea de mark as deleted si delete permanently
         //          DONE - Delete Flock Admin => Adminul site-ului devine adminul flockului
         //          DONE - ADD SEARCH METHOD
-        // Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului cu un searchbar
-        // Make regular user delete not assign posts to deleted user, only admin delete
-        // Add click event to follows/followers display name / username
-        // No login into "deleted" accounts
-        // Block Users / maybe Flocks?
+        //          DONE - Make profiles with wrong relations not able to view followers / follows as well
+        //          DONE - Add click event to follows/followers display name / username
+        //          DONE - No login into "deleted" accounts
+        //          DONE - When UnfollowUser, if from Followers / Following redirect to own page instead
+        //   IN PROGRESS - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului cu un searchbar (does not work yet at all basically)
+        // Make regular user delete not assign posts to deleted user, only admin delete (?????????????)
+        // Block Users (maybe Flocks as well care da block la toti userii din flock?)
         // ADD AI FUNCTIONALITY
-        // When UnfollowUser, if from Followers / Following redirect to own page instead
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
-        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, LoginPartial modificat, SCOS HOME CONTROLLER,
-        //                                     poate sa ne mai uitam peste taburile din sidebar, vedem ce facem cu paginile de Identity,
-        //                                     formul de new/edit echo sa arate bine + add a new comment button
+        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, ### LoginPartial modificat - DONE ###,
+        //                                     SCOS / MODIFICAT HOME CONTROLLER, poate sa ne mai uitam peste taburile din sidebar,
+        //                                     vedem ce facem cu paginile de Identity, formul de new/edit echo sa arate bine + add a new comment button
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -196,7 +197,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
-        public IActionResult UnfollowUser(string receiverUserId)
+        public IActionResult UnfollowUser(string receiverUserId, string? type)
         {
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null)
@@ -206,6 +207,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            var senderUser = db.UserProfiles.Select(u => u.ApplicationUser).FirstOrDefault(u => u!.Id == currentUserId);
             var receiverUser = db.UserProfiles
                 .Include(u => u.ApplicationUser)
                 .FirstOrDefault(u => u.Id == receiverUserId);
@@ -221,7 +223,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["followrequest-message"] = "You cannot unfollow yourself.";
                 TempData["followrequest-type"] = "alert-warning";
-                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+                return RedirectToAction("Show", "UserProfiles", new { username = (type != null) ? senderUser!.UserName : receiverUser.ApplicationUser?.UserName });
             }
 
             /*
@@ -237,7 +239,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["followrequest-message"] = "You are not following this user.";
                 TempData["followrequest-type"] = "alert-info";
-                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+                return RedirectToAction("Show", "UserProfiles", new { username = (type != null) ? senderUser!.UserName : receiverUser.ApplicationUser?.UserName });
             }
 
             var blockedRelation = db.Relations
@@ -248,7 +250,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["followrequest-message"] = "You cannot unfollow this user.";
                 TempData["followrequest-type"] = "alert-warning";
-                return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+                return RedirectToAction("Show", "UserProfiles", new { username = (type != null) ? senderUser!.UserName : receiverUser.ApplicationUser?.UserName });
             }
 
             
@@ -257,7 +259,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             TempData["followrequest-message"] = "You have unfollowed this user!";
             TempData["followrequest-type"] = "alert-info";
-            return RedirectToAction("Show", "UserProfiles", new { username = receiverUser.ApplicationUser?.UserName });
+            return RedirectToAction("Show", "UserProfiles", new { username = (type != null) ? senderUser!.UserName : receiverUser.ApplicationUser?.UserName });
         }
 
         /// <summary>

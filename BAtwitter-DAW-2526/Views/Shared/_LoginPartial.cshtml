@@ -16,25 +16,39 @@
             .FirstOrDefault(up => up.Id == currentUser.Id)
         : null;
 
+    var displayname = userProfile?.DisplayName;
     var username = currentUser?.UserName ?? User.Identity?.Name;
     var pfpLink = userProfile?.PfpLink ?? "/Resources/Images/user_default_pfp.jpg";
+    bool? showLock = userProfile?.AccountStatus.Equals("private");
 }
 
 <ul class="nav flex-column gap-1 m-0 p-0">
     @if (SignInManager.IsSignedIn(User))
     {
-        <li class="nav-item">
-            <a class="nav-link d-flex align-items-center rounded-3 px-2 py-2 link-body-emphasis"
-               asp-controller="UserProfiles"
-               asp-action="Show"
-               asp-route-username="@username"
-               title="View Profile">
-                <img src="@pfpLink"
-                     alt="Profile Picture"
-                     class="rounded-circle me-2 flex-shrink-0"
-                     style="width: 32px; height: 32px; object-fit: cover;" />
-                <span style="min-width: 0; flex: 1; word-wrap: break-word; overflow-wrap: break-word;">Hello @@@username!</span>
+        <li class="nav-item d-flex align-items-center">
+            @* <a class="nav-link d-flex align-items-center rounded-3 px-2 py-2 link-body-emphasis" asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" title="View Profile">
+                
+                <div class="d-flex flex-column">
+                    <span class="text-muted" style="min-width: 0; flex: 1; word-wrap: break-word; overflow-wrap: break-word;">@@@username</span>
+                </div>
+            </a> *@
+
+            <a class="nav-link rounded px-2 py-2 link-body-emphasis" asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" title="View Profile">
+                <img src="@pfpLink" alt="Profile Picture" class="rounded-circle me-2 flex-shrink-0" style="width: 32px; height: 32px; object-fit: cover;" />
             </a>
+
+            <div class="d-flex flex-column me-3">
+                <div class="d-flex align-items-center gap-0">
+                    <a asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" class="fw-semibold text-truncate text-decoration-none link-body-emphasis" style="min-width: 0; display: block; max-width: 65%; word-wrap: break-word; overflow-wrap: break-word;">
+                        @(displayname ?? "Unknown user")
+                    </a>
+                    @if (showLock != null && showLock == true)
+                    { <i class="bi bi-lock-fill fs-6"></i> }
+                </div>
+                <a asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" class="text-muted text-truncate text-decoration-none">
+                    <small class="text-muted" style="min-width: 0; display: block; max-width: 50%; word-wrap: break-word; overflow-wrap: break-word;">@@@username</small>
+                </a>
+            </div>
         </li>
 
         <li class="nav-item">

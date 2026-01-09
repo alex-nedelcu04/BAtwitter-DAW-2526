@@ -37,11 +37,13 @@
 
                 <div class="ms-3">
                     <h4 class="fw-bold mb-0 d-flex align-items-center gap-1">
-                        @(Model.DisplayName)
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser!.UserName })" class="fw-semibold text-decoration-none link-body-emphasis">@Model.DisplayName</a>
                         @if(showLock) { <i class="bi bi-lock-fill fs-5"></i> }
                         <small class="h6 text-muted mb-0">@Model.Pronouns </small>
                     </h4>
-                    <h5 class="text-muted mb-0"> @@@Model.ApplicationUser?.UserName</h5>
+                    <a href="@Url.Action("Show", "UserProfiles", new { username = Model.ApplicationUser.UserName })" class="text-muted text-decoration-none">
+                        <h5>@("@" + Model.ApplicationUser.UserName)</h5>
+                    </a>
                 </div>
             </div>
 
@@ -49,6 +51,7 @@
             {
                 <div class="d-flex">
                     <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id">
+                        <input type="hidden" name="type" value="yes" />
                         <button class="btn btn-danger" type="submit">Unfollow</button>
                     </form>
                 </div>

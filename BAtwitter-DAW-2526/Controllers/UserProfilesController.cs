@@ -82,6 +82,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            if (IsProfileUnviewable(userProfile))
+            {
+                TempData["userprofile-message"] = "You cannot view this profile's followers!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Show", "UserProfiles", new { username = username });
+            }
+
             // Obține ID-ul utilizatorului deleted pentru a-l exclude
             var deletedUserId = db.Users
                 .Where(u => u.UserName == "deleted")
@@ -146,6 +153,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 TempData["userprofile-message"] = "User profile does not exist!";
                 TempData["userprofile-type"] = "alert-warning";
                 return RedirectToAction("Index");
+            }
+
+            if (IsProfileUnviewable(userProfile))
+            {
+                TempData["userprofile-message"] = "You cannot view this profile's follows!";
+                TempData["userprofile-type"] = "alert-warning";
+                return RedirectToAction("Show", "UserProfiles", new { username = username });
             }
 
             // Obține ID-ul utilizatorului deleted pentru a-l exclude
@@ -926,6 +940,19 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 AssignEchoAndChildrenToDeletedUser(comment, deletedUserId, userId, remUser);
             }
+        }
+
+        private bool IsProfileUnviewable(UserProfile user)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var isFollowing = db.Relations
+                    .Any(r => r.SenderId == currentUserId && r.ReceiverId == user.Id && r.Type == 1);
+
+            var isBlockedBy = db.Relations
+                .Any(r => r.ReceiverId == currentUserId && r.SenderId == user.Id && r.Type == -1);
+
+            return user.AccountStatus.Equals("private") && user.Id != currentUserId && !isFollowing || isBlockedBy;
         }
     }
 }

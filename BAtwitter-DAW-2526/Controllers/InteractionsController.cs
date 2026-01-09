@@ -401,6 +401,7 @@ namespace BAtwitter_DAW_2526.Controllers
         private bool CanViewEcho(Echo echo)
         {
             return User.IsInRole("Admin") || echo.User!.AccountStatus.Equals("active")
+               || (!echo.User!.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1))
                || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
                || echo.UserId == _userManager.GetUserId(User);
         }
@@ -409,7 +410,7 @@ namespace BAtwitter_DAW_2526.Controllers
         {
             return User.IsInRole("Admin") || _userManager.GetUserId(User) == usr.ApplicationUser!.Id
                 || (usr.AccountStatus.Equals("private") && usr.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
-                || (usr.AccountStatus.Equals("active") && !usr.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1));
+                || (!usr.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1));
         }
 
         private void SetAccessRights()
