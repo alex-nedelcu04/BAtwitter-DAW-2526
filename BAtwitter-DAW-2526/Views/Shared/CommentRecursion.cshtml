@@ -24,9 +24,19 @@
 @functions {
     bool AnyNonRemoved(ICollection<Echo> echs)
     {
+        if (echs == null || !echs.Any())
+        {
+            return false;
+        }
+        
         foreach (var ech in echs)
         {
             if (!ech.IsRemoved)
+            {
+                return true;
+            }
+            // Verifica recursiv daca comentariul sters are copii nestersi
+            if (ech.Comments != null && AnyNonRemoved(ech.Comments))
             {
                 return true;
             }

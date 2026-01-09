@@ -4,7 +4,7 @@
 
 @* Model.Id == ViewBag.CurrentUser || !ViewBag.IsPrivateAccount || (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && ViewBag.IsFollowing) *@
 
-@if (ViewBag.IsBlockedBy)
+@if (ViewBag.IsBlockedBy && !User.IsInRole("Admin"))
 {
     <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
         You have been blocked by this user.
@@ -13,20 +13,25 @@
 else if (ViewBag.HasBlocked)
 {
     <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-        You have blocked this user. View profile anyways?
+        You have blocked this user.
     </small>
     <!-- Aici ar trebui sa bagam un yes/no sub forma a doua taburi si dupa ce schimbi de la yes la no dispar taburile si aia e tot sau cv de genul -->
 }
-else if (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && !ViewBag.IsFollowing)
+
+@* Afiseaza postarile daca nu esti blocat de utilizator, nu ai blocat utilizatorul (sau esti admin) *@
+@if (User.IsInRole("Admin") || (!ViewBag.IsBlockedBy && !ViewBag.HasBlocked))
 {
-    <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-        This profile is private.
-    </small>
-}
-else
-{
-    @foreach (var echo in ViewBag.UserEchoes)
+    @if (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && !ViewBag.IsFollowing && !User.IsInRole("Admin"))
     {
-        <partial name="EchoInfo" model="echo" />
+        <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+            This profile is private.
+        </small>
+    }
+    else
+    {
+        @foreach (var echo in ViewBag.UserEchoes)
+        {
+            <partial name="EchoInfo" model="echo" />
+        }
     }
 }

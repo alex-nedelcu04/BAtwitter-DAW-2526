@@ -168,6 +168,16 @@ namespace BAtwitter_DAW_2526.Controllers
                 db.Flocks.Add(flock);
                 await db.SaveChangesAsync();
 
+                var adminFlockUser = new FlockUser
+                {
+                    FlockId = flock.Id,
+                    UserId = flock.AdminId,
+                    Role = "member",
+                    JoinDate = DateTime.Now
+                };
+                db.FlockUsers.Add(adminFlockUser);
+                await db.SaveChangesAsync();
+
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
@@ -232,10 +242,16 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
+                var memberUserIds = db.FlockUsers
+                    .Where(fu => fu.FlockId == id && fu.Role == "member")
+                    .Select(fu => fu.UserId)
+                    .ToList();
+
                 var users = db.UserProfiles
                                .Include(u => u.ApplicationUser)
                                .Include(u => u.SentRelations)
                                .Include(u => u.ReceivedRelations)
+                               .Where(u => memberUserIds.Contains(u.Id))
                                .ToList()
                                .Where(u => CanViewProfile(u))
                                .Select(u => new { u.Id, UserName = u.ApplicationUser!.UserName!, u.DisplayName, u.PfpLink });
@@ -278,6 +294,12 @@ namespace BAtwitter_DAW_2526.Controllers
 
             flock.Name = reqFlock.Name;
             flock.Description = reqFlock.Description;
+            
+            // Update admin if changed
+            if (!string.IsNullOrEmpty(reqFlock.AdminId) && reqFlock.AdminId != flock.AdminId)
+            {
+                flock.AdminId = reqFlock.AdminId;
+            }
 
             // Active after pressing delete and no new files
             if (removePfp && !string.IsNullOrEmpty(flock.PfpLink))
@@ -756,6 +778,44 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             ViewBag.Title = "View Flock";
+            SetAccessRights();
+            return View(flock);
+        }
+
+        public IActionResult Members(int id)
+        {
+            var flock = db.Flocks
+                .Include(f => f.Admin)
+                    .ThenInclude(a => a!.ApplicationUser)
+                .Where(f => f.Id == id)
+                .FirstOrDefault();
+
+            if (flock is null)
+            {
+                TempData["flock-message"] = "Flock does not exist!";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            var members = db.FlockUsers
+                .Include(fu => fu.User)
+                    .ThenInclude(u => u!.ApplicationUser)
+                .Where(fu => fu.FlockId == id)
+                .ToList()
+                .OrderByDescending(fu => fu.UserId == flock.AdminId)
+                    .ThenBy(fu => fu.JoinDate)
+                .ToList();
+
+            ViewBag.Members = members;
+            ViewBag.CurrentUser = _userManager.GetUserId(User);
+
+            if (TempData.ContainsKey("flock-message"))
+            {
+                ViewBag.Message = TempData["flock-message"];
+                ViewBag.Type = TempData["flock-type"];
+            }
+
+            ViewBag.Title = "Flock Members";
             SetAccessRights();
             return View(flock);
         }

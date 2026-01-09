@@ -113,7 +113,7 @@
                     </div>
                 }
             }
-            else if (Model.Id == ViewBag.CurrentUser && Model.AccountStatus != "deleted")
+            else if (Model.Id == ViewBag.CurrentUser && Model.AccountStatus != "deleted" && isShow)
             {
                 <div class="d-flex flex-row justify-content-between mt-3">
                     <div class="d-flex gap-2">
@@ -130,53 +130,108 @@
                     </form>
                 </div>
             }
-            else if (Model.Id != ViewBag.CurrentUser && Model.AccountStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser))
+            else if (Model.Id != ViewBag.CurrentUser && Model.AccountStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser) && isShow)
             {
                 @if (ViewBag.IsAdmin)
                 {
-                    <!-- BUTON FOLLOW  -->
+                    <!-- BUTON FOLLOW / BLOCK  -->
                     <div class="d-flex flex-row justify-content-between mt-3 gap-2">
-                        @if (ViewBag.IsFollowing == true)
-                        {
-                            <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+                        <div class="d-flex gap-2">
+                            @if (ViewBag.HasBlocked == true)
+                            {
+                                <!-- User is blocked - show unblock button -->
+                                <form method="post" asp-controller="FollowRequests" asp-action="UnblockUser" asp-route-userIdToUnblock="@Model.Id" onclick="event.stopPropagation();">
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unblockModal">
+                                        <i class="bi bi-person-x"></i> Unblock
+                                    </button>
 
-                                <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-body">
-                                                Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
-                                            </div>
-                                            <div class="modal-footer d-flex justify-content-between">
-                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
-                                                <button type="submit" class="btn btn-success">Yes</button>
+                                    <div class="modal fade" id="unblockModal" tabindex="-1" aria-labelledby="unblockModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-body">
+                                                    Are you sure you want to unblock @@@(Model.ApplicationUser.UserName)?
+                                                </div>
+                                                <div class="modal-footer d-flex justify-content-between">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-success">Unblock</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </form>
-                        }
-                        else if (ViewBag.HasPendingRequest == true)
-                        {
-                            <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-warning" type="submit">Cancel Request</button>
-                            </form>
-                        }
-                        else if (Model.AccountStatus == "private")
-                        {
-                            <!-- CONT PRIVAT-->
-                            <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-primary" type="submit">Follow</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <!-- CONT PUBLIC -->
-                            <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-primary" type="submit">Follow</button>
-                            </form>
-                        }
-                        <div class="d-flex flex-row justify-content-between">
+                                </form>
+                            }
+                            else if (ViewBag.IsBlockedBy == true)
+                            {
+                                <!-- User has blocked you - no action buttons -->
+                                <span class="text-muted"><i class="bi bi-lock-fill"></i> This user has blocked you</span>
+                            }
+                            else
+                            {
+                                <!-- Normal follow/unfollow buttons -->
+                                @if (ViewBag.IsFollowing == true)
+                                {
+                                    <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+
+                                        <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-body">
+                                                        Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
+                                                    </div>
+                                                    <div class="modal-footer d-flex justify-content-between">
+                                                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
+                                                        <button type="submit" class="btn btn-success">Yes</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                }
+                                else if (ViewBag.HasPendingRequest == true)
+                                {
+                                    <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                        <button class="btn btn-warning" type="submit">Cancel Request</button>
+                                    </form>
+                                }
+                                else if (Model.AccountStatus == "private")
+                                {
+                                    <!-- CONT PRIVAT-->
+                                    <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                        <button class="btn btn-primary" type="submit">Follow</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <!-- CONT PUBLIC -->
+                                    <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                        <button class="btn btn-primary" type="submit">Follow</button>
+                                    </form>
+                                }
+
+                                <!-- Block button -->
+                                <form method="post" asp-controller="FollowRequests" asp-action="BlockUser" asp-route-userIdToBlock="@Model.Id" onclick="event.stopPropagation();">
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#blockModal">
+                                        <i class="bi bi-person-x"></i> Block
+                                    </button>
+
+                                    <div class="modal fade" id="blockModal" tabindex="-1" aria-labelledby="blockModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-body">
+                                                    Are you sure you want to block @@@(Model.ApplicationUser.UserName)? You won't be able to see their content and they won't be able to see yours.
+                                                </div>
+                                                <div class="modal-footer d-flex justify-content-between">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-danger">Block</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                        <div class="d-flex flex-row justify-content-between gap-2">
                             <form method="post" asp-controller="UserProfiles" asp-action="Delete" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
                                 <button class="btn btn-warning" type="submit">Mark User Profile as Deleted</button>
                             </form>
@@ -189,46 +244,99 @@
                 }
                 else
                 {
-                    <!-- BUTON FOLLOW  -->
+                    <!-- BUTON FOLLOW / BLOCK  -->
                     <div class="d-flex flex-row justify-content-start mt-3 gap-2">
-                        @if (ViewBag.IsFollowing == true)
+                        @if (ViewBag.HasBlocked == true)
                         {
-                            <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+                            <!-- User is blocked - show unblock button -->
+                            <form method="post" asp-controller="FollowRequests" asp-action="UnblockUser" asp-route-userIdToUnblock="@Model.Id" onclick="event.stopPropagation();">
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unblockModal">
+                                    <i class="bi bi-person-x"></i> Unblock
+                                </button>
 
-                                <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                                <div class="modal fade" id="unblockModal" tabindex="-1" aria-labelledby="unblockModalLabel" aria-hidden="true">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
                                             <div class="modal-body">
-                                                Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
+                                                Are you sure you want to unblock @@@(Model.ApplicationUser.UserName)?
                                             </div>
                                             <div class="modal-footer d-flex justify-content-between">
-                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                                                <button type="submit" class="btn btn-success">Unfollow</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Unblock</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </form>
                         }
-                        else if (ViewBag.HasPendingRequest == true)
+                        else if (ViewBag.IsBlockedBy == true)
                         {
-                            <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-warning" type="submit">Cancel Request</button>
-                            </form>
-                        }
-                        else if (Model.AccountStatus == "private")
-                        {
-                            <!-- CONT PRIVAT-->
-                            <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-primary" type="submit">Follow</button>
-                            </form>
+                            <!-- User has blocked you - no action buttons -->
+                            <span class="text-muted"><i class="bi bi-lock-fill"></i> This user has blocked you</span>
                         }
                         else
                         {
-                            <!-- CONT PUBLIC -->
-                            <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
-                                <button class="btn btn-primary" type="submit">Follow</button>
+                            <!-- Normal follow/unfollow buttons -->
+                            @if (ViewBag.IsFollowing == true)
+                            {
+                                <form method="post" asp-controller="FollowRequests" asp-action="UnfollowUser" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Following</button>
+
+                                    <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-body">
+                                                    Are you sure you want to unfollow @@@(Model.ApplicationUser.UserName)?
+                                                </div>
+                                                <div class="modal-footer d-flex justify-content-between">
+                                                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-success">Unfollow</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            }
+                            else if (ViewBag.HasPendingRequest == true)
+                            {
+                                <form method="post" asp-controller="FollowRequests" asp-action="CancelFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                    <button class="btn btn-warning" type="submit">Cancel Request</button>
+                                </form>
+                            }
+                            else if (Model.AccountStatus == "private")
+                            {
+                                <!-- CONT PRIVAT-->
+                                <form method="post" asp-controller="FollowRequests" asp-action="SendFollowRequest" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                    <button class="btn btn-primary" type="submit">Follow</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- CONT PUBLIC -->
+                                <form method="post" asp-controller="FollowRequests" asp-action="FollowDirect" asp-route-receiverUserId="@Model.Id" onclick="event.stopPropagation();">
+                                    <button class="btn btn-primary" type="submit">Follow</button>
+                                </form>
+                            }
+
+                            <!-- Block button -->
+                            <form method="post" asp-controller="FollowRequests" asp-action="BlockUser" asp-route-userIdToBlock="@Model.Id" onclick="event.stopPropagation();">
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#blockModal">
+                                    <i class="bi bi-person-x"></i> Block
+                                </button>
+
+                                <div class="modal fade" id="blockModal" tabindex="-1" aria-labelledby="blockModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-body">
+                                                Are you sure you want to block @@@(Model.ApplicationUser.UserName)? You won't be able to see their content and they won't be able to see yours.
+                                            </div>
+                                            <div class="modal-footer d-flex justify-content-between">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger">Block</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </form>
                         }
                     </div>

@@ -3,9 +3,19 @@
 @functions {
     bool AnyNonRemoved(ICollection<Echo> echs)
     {
+        if (echs == null || !echs.Any())
+        {
+            return false;
+        }
+        
         foreach (var ech in echs)
         {
             if (!ech.IsRemoved)
+            {
+                return true;
+            }
+            // Verifica recursiv daca comentariul sters are copii nestersi
+            if (ech.Comments != null && AnyNonRemoved(ech.Comments))
             {
                 return true;
             }
@@ -70,26 +80,33 @@
             <div class="col-md-2"></div>
 
             <div class="col-md-8">
-                <div class="card">
-                    <a class="link-primary link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-100-hover" asp-controller="Echoes" asp-action="New" asp-route-id="@Model.Id" asp-route-type="comment">Send Echo</a>
-
-                    <!--
-                    <form method="post" asp-controller="Echoes" asp-action="Show">
-                        <div class="card-body">
-                            <input type="hidden" name="EchoId" value="@Model.Id" />
-
-                            <label>Comment</label>
-                            <br />
-
-                            <textarea class="form-control" name="Content"></textarea>
-                            <span asp-validation-for="Content" class="text-danger"></span>
-                            <br /><br />
-
-                            <button class="btn btn-success" type="submit">Add Comment</button>
-                        </div>
-                    </form>
-                    -->
+                <div class="p-3 d-flex justify-content-center">
+                    <a class="btn btn-primary d-inline-flex align-items-center gap-2" 
+                       asp-controller="Echoes" 
+                       asp-action="New" 
+                       asp-route-id="@Model.Id" 
+                       asp-route-type="comment">
+                        <i class="bi bi-send-fill"></i>
+                        <span>Send Echo</span>
+                    </a>
                 </div>
+
+                <!--
+                <form method="post" asp-controller="Echoes" asp-action="Show">
+                    <div class="card-body">
+                        <input type="hidden" name="EchoId" value="@Model.Id" />
+
+                        <label>Comment</label>
+                        <br />
+
+                        <textarea class="form-control" name="Content"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                        <br /><br />
+
+                        <button class="btn btn-success" type="submit">Add Comment</button>
+                    </div>
+                </form>
+                -->
             </div>
 
             <div class="col-md-2"></div>

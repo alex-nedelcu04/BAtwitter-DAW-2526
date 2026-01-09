@@ -19,17 +19,6 @@
             isBookmarked = inter.Bookmarked;
         }
     }
-    bool showLock = Model.User!.AccountStatus.Equals("private");
-}
-
-@functions {
-    bool CanViewEcho(Echo echo)
-    {
-        return echo.User!.AccountStatus.Equals("active")
-           || (!echo.User!.SentRelations.Any(rel => rel.ReceiverId == ViewBag.CurrentUser && rel.Type == -1))
-           || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1))
-           || echo.UserId == ViewBag.CurrentUser;
-    }
 }
 
 
@@ -62,23 +51,21 @@
                 <div class="d-flex flex-column me-3">
                     @if (Model.User?.ApplicationUser != null)
                     {
-                        <div class="d-flex align-items-center gap-1">
-                            <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none link-body-emphasis">
-                                @(Model.User?.DisplayName ?? "Unknown user")
-                            </a>
-                            @if (showLock) { <i class="bi bi-lock-fill fs-6"></i> }
-                        </div>
+                        <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User.ApplicationUser.UserName })" class="fw-semibold text-decoration-none link-body-emphasis">
+                            @(Model.User?.DisplayName ?? "Unknown user")
+                        </a>
                         <a href="@Url.Action("Show", "UserProfiles", new { username = Model.User!.ApplicationUser.UserName })" class="text-muted text-decoration-none">
                             <small>@("@" + Model.User.ApplicationUser.UserName)</small>
                         </a>
                     }
                     else
                     {
-                        <span class="fw-semibold d-flex align-items-center gap-1">
+                        <span class="fw-semibold">
                             @(Model.User?.DisplayName ?? "Unknown user")
-                            @if (showLock) { <i class="bi bi-lock-fill fs-6"></i> }
                         </span>
                     }
+
+
                 </div>
 
                 @if (Model.Flock != null)
@@ -203,45 +190,39 @@
         @if (Model.AmpParent != null)
         {
             <div class="d-flex justify-content-center w-100">
-                <div style="width: 92.5%">
+                <div style="width: 80%">
                     <partial name="AmplifyWindow" model="@Model.AmpParent" />
+                    @* <partial name="AmplifyWindow" model="@Model" /> *@
                 </div>
             </div>
         }
 
         <!-- FOOTER: interactiuni + created at -->
-        <div class="d-flex justify-content-between align-items-center mt-2">
+        @if (!Model.IsRemoved)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-2">
 
-            <div class="small text-muted d-flex align-items-center flex-wrap">
-                <span class="me-3 d-flex align-items-center">
-                    <form method="get" asp-controller="Echoes" asp-action="New">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <input type="hidden" name="type" value="@typeComm" />
-                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                            <i class="bi bi-chat me-1"></i> @Model.CommentsCount
-                        </button>
-                    </form>
-                </span>
+                <div class="small text-muted d-flex align-items-center flex-wrap">
+                    <span class="me-3 d-flex align-items-center">
+                        <form method="get" asp-controller="Echoes" asp-action="New">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="type" value="@typeComm" />
+                            <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                                <i class="bi bi-chat me-1"></i> @Model.CommentsCount
+                            </button>
+                        </form>
+                    </span>
 
-                <span class="me-3 d-flex align-items-center">
-                    @if (Model.UserId == ViewBag.CurrentUser || Model.User!.AccountStatus.Equals("active") && !Model.User!.SentRelations.Any(r => r.ReceiverId == ViewBag.CurrentUser && r.Type == -1))
-                    {
+                    <span class="me-3 d-flex align-items-center">
                         <form method="post" asp-controller="Interactions" asp-action="New_Rebound" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="rebound">
                             <input type="hidden" name="EchoId" value="@Model.Id" />
                             <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
                                 <i class="bi bi-arrow-repeat me-1 rebound-icon @(isRebounded ? "text-success" : "")"></i> <span class="rebound-count">@Model.ReboundCount</span>
                             </button>
                         </form>
-                    }
-                    else
-                    {
-                        <i class="bi bi-arrow-repeat me-1 text-opacity-25"></i> <span class="text-opacity-25">@Model.ReboundCount</span>
-                    }
-                </span>
+                    </span>
 
-                <span class="me-3 d-flex align-items-center">
-                    @if (Model.UserId == ViewBag.CurrentUser || Model.User!.AccountStatus.Equals("active") && !Model.User!.SentRelations.Any(r => r.ReceiverId == ViewBag.CurrentUser && r.Type == -1))
-                    {
+                    <span class="me-3 d-flex align-items-center">
                         <form method="get" asp-controller="Echoes" asp-action="New">
                             <input type="hidden" name="id" value="@Model.Id" />
                             <input type="hidden" name="type" value="@typeAmp" />
@@ -257,41 +238,38 @@
                                 <a class="text-muted text-decoration-none link-underline link-underline-opacity-0" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
                             }
                         </form>
-                    }
-                    else
-                    {
-                        <i class="bi bi-megaphone me-1 text-muted text-opacity-25"></i>
-                        @if (!showButtons || @Model.AmplifierCount == 0) { <span class="text-opacity-25">@Model.AmplifierCount</span> }
-                        else
-                        {
-                            <a class="text-muted text-decoration-none link-underline link-underline-opacity-0 text-opacity-25" asp-controller="Echoes" asp-action="Amplifiers" asp-route-id="@Model.Id">/ <i class="bi bi-clipboard2 me-1"></i> @Model.AmplifierCount</a>
-                        }
-                    }
-                </span>
+                    </span>
 
-                <span class="me-3 d-flex align-items-center">
-                    <form method="post" asp-controller="Interactions" asp-action="New_Bookmark" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="bookmark">
-                        <input type="hidden" name="EchoId" value="@Model.Id" />
-                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                            <i class="bi bookmark-icon @(isBookmarked ? "bi-bookmark-fill text-primary" : "bi-bookmark") me-1"></i> <span class="bookmark-count">@Model.BookmarksCount</span>
-                        </button>
-                    </form>
-                </span>
+                    <span class="me-3 d-flex align-items-center">
+                        <form method="post" asp-controller="Interactions" asp-action="New_Bookmark" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="bookmark">
+                            <input type="hidden" name="EchoId" value="@Model.Id" />
+                            <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                                <i class="bi bookmark-icon @(isBookmarked ? "bi-bookmark-fill text-primary" : "bi-bookmark") me-1"></i> <span class="bookmark-count">@Model.BookmarksCount</span>
+                            </button>
+                        </form>
+                    </span>
 
-                <span class="me-3 d-flex align-items-center">
-                    <form method="post" asp-controller="Interactions" asp-action="New_Like" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="like">
-                        <input type="hidden" name="EchoId" value="@Model.Id" />
-                        <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
-                            <i class="bi like-icon @(isLiked ? "bi-heart-fill text-danger" : "bi-heart") me-1"></i> <span class="like-count">@Model.LikesCount</span>
-                        </button>
-                    </form>
-                </span>
+                    <span class="me-3 d-flex align-items-center">
+                        <form method="post" asp-controller="Interactions" asp-action="New_Like" class="d-inline interaction-form" data-echo-id="@Model.Id" data-interaction-type="like">
+                            <input type="hidden" name="EchoId" value="@Model.Id" />
+                            <button type="submit" class="p-0 border-0 text-muted text-decoration-none" style="background: none; cursor: pointer;">
+                                <i class="bi like-icon @(isLiked ? "bi-heart-fill text-danger" : "bi-heart") me-1"></i> <span class="like-count">@Model.LikesCount</span>
+                            </button>
+                        </form>
+                    </span>
+                </div>
+
+                <div class="small text-muted text-end">
+                    created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
+                </div>
             </div>
-
-            <div class="small text-muted text-end">
+        }
+        else
+        {
+            <div class="small text-muted text-end mt-2">
                 created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")
             </div>
-        </div>
+        }
 
         @if (showAdmin && ViewBag.IsAdmin)
         {
@@ -346,20 +324,11 @@
             }
         }
 
-        @if (User.IsInRole("Admin"))
+        @if (Model.IsRemoved)
         {
-            @if (Model.IsRemoved)
-            {
-                <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-                    This Echo has been removed.
-                </small>
-            }
-            else if (!CanViewEcho(Model))
-            {
-                <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-                    This Echo was sent from a private account you do not follow.
-                </small>
-            }
+            <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+                This Echo has been removed.
+            </small>
         }
     </div>
 </div>

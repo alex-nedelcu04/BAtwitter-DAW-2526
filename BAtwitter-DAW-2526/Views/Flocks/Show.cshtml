@@ -1,8 +1,47 @@
 ﻿@model BAtwitter_DAW_2526.Models.Flock
 
+
+@if (ViewBag.Message != null)
+{
+
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<br />
+
+
+
 <partial name="FlockInfo" model="@Model" />
 
 @foreach (var echo in ViewBag.FlockEchoes)
 {
     <partial name="EchoInfo" model="echo" />
+}
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.flock-card').forEach(function (card) {
+                // Only add listener if not already added
+                if (!card.dataset.clickListenerAdded) {
+                    card.dataset.clickListenerAdded = 'true';
+                    card.addEventListener('click', function (e) {
+                        // Don't navigate if clicking on links, buttons, or nested echo cards
+                        if (e.target.closest('a, button, .echo-card')) {
+                            return;
+                        }
+
+                        // Don't navigate if clicking on the nested echo card area
+                        if (e.target.closest('.post-click-area')) {
+                            return;
+                        }
+
+                        const url = card.getAttribute('data-flock-url');
+                        if (url) {
+                            window.location.href = url;
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 }

@@ -95,15 +95,19 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Select(u => u.Id)
                 .FirstOrDefault() ?? string.Empty;
 
+            var currentUserId = _userManager.GetUserId(User);
+            var blockedUserIds = GetBlockedUserIds(currentUserId);
+
             var followers = db.Relations
                                 .Include(rel => rel.Sender!.SentRelations)
                                 .Include(rel => rel.Sender!.ReceivedRelations)
                                 .Include(rel => rel.Sender!.ApplicationUser)
-                                .Where(rel => rel.ReceiverId == userProfile.Id)
+                                .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1)
                                 .OrderBy(rel => rel.relationDate)
-                                .Select(rel => rel.Sender).ToList();
+                                .Select(rel => rel.Sender)
+                                .Where(sender => sender != null && (User.IsInRole("Admin") || !blockedUserIds.Contains(sender.Id)))
+                                .ToList();
 
-            var currentUserId = _userManager.GetUserId(User);
             ViewBag.CurrentUser = currentUserId;
             ViewBag.Followers = followers;
 
@@ -168,13 +172,17 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Select(u => u.Id)
                 .FirstOrDefault() ?? string.Empty;
 
+            var currentUserId = _userManager.GetUserId(User);
+            var blockedUserIds = GetBlockedUserIds(currentUserId);
+
             var follows = db.Relations
                             .Include(rel => rel.Receiver!.ApplicationUser)
-                            .Where(rel => rel.SenderId == userProfile.Id)
+                            .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1)
                             .OrderBy(rel => rel.relationDate)
-                            .Select(rel => rel.Receiver).ToList();
+                            .Select(rel => rel.Receiver)
+                            .Where(receiver => receiver != null && (User.IsInRole("Admin") || !blockedUserIds.Contains(receiver.Id)))
+                            .ToList();
 
-            var currentUserId = _userManager.GetUserId(User);
             ViewBag.CurrentUser = currentUserId;
             ViewBag.Follows = follows;
 
@@ -561,6 +569,9 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Select(u => u.Id)
                 .FirstOrDefault() ?? string.Empty;
 
+            var currentUserId = _userManager.GetUserId(User);
+            var blockedUserIds = GetBlockedUserIds(currentUserId);
+
             var echoes = db.Echoes
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
@@ -573,10 +584,16 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
                             .OrderByDescending(ech => ech.DateCreated);
 
-            var followsCount = db.Relations.Count(rel => rel.SenderId == userProfile.Id);
-            var followersCount = db.Relations.Count(rel => rel.ReceiverId == userProfile.Id);
+            // Count follows and followers excluding blocked users (except admin)
+            var followsCount = db.Relations
+                .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1 && 
+                             (User.IsInRole("Admin") || currentUserId == null || !blockedUserIds.Contains(rel.ReceiverId)))
+                .Count();
+            var followersCount = db.Relations
+                .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1 && 
+                             (User.IsInRole("Admin") || currentUserId == null || !blockedUserIds.Contains(rel.SenderId)))
+                .Count();
 
-            var currentUserId = _userManager.GetUserId(User);
             ViewBag.CurrentUser = currentUserId;
             ViewBag.UserEchoes = echoes;
             ViewBag.FollowsCount = followsCount;
@@ -942,8 +959,31 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
+        // Helper method to get list of blocked user IDs (bidirectional)
+        private List<string> GetBlockedUserIds(string? currentUserId)
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return new List<string>();
+            }
+
+            var blockedUserIds = db.Relations
+                .Where(r => (r.SenderId == currentUserId && r.Type == -1) ||
+                           (r.ReceiverId == currentUserId && r.Type == -1))
+                .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
+                .ToList();
+
+            return blockedUserIds;
+        }
+
         private bool IsProfileUnviewable(UserProfile user)
         {
+            // Admin can view all profiles
+            if (User.IsInRole("Admin"))
+            {
+                return false;
+            }
+
             var currentUserId = _userManager.GetUserId(User);
 
             var isFollowing = db.Relations
@@ -952,7 +992,10 @@ namespace BAtwitter_DAW_2526.Controllers
             var isBlockedBy = db.Relations
                 .Any(r => r.ReceiverId == currentUserId && r.SenderId == user.Id && r.Type == -1);
 
-            return user.AccountStatus.Equals("private") && user.Id != currentUserId && !isFollowing || isBlockedBy;
+            var hasBlocked = db.Relations
+                .Any(r => r.SenderId == currentUserId && r.ReceiverId == user.Id && r.Type == -1);
+
+            return (user.AccountStatus.Equals("private") && user.Id != currentUserId && !isFollowing) || isBlockedBy || hasBlocked;
         }
     }
 }

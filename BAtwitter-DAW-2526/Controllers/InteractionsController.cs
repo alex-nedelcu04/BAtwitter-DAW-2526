@@ -33,6 +33,9 @@ namespace BAtwitter_DAW_2526.Controllers
                     .Where(u => u.UserName == "deleted")
                     .FirstOrDefault();
 
+                var currentUserId = _userManager.GetUserId(User);
+                var blockedUserIds = GetBlockedUserIds(currentUserId);
+
                 var nonCommentEchoes = db.Echoes
                                         .Include(ech => ech.User)
                                             .ThenInclude(u => u!.SentRelations)
@@ -49,7 +52,8 @@ namespace BAtwitter_DAW_2526.Controllers
                                         .Include(ech => ech.Flock)
                                         .ToList()
                                         .Where(ech => ((ech.Content != null && ech.Content.Contains(search)) || (ech.Flock != null && ech.Flock.Name.Contains(search))) &&
-                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && CanViewEcho(ech) && ech.CommParentId == null)
+                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && 
+                                                        !blockedUserIds.Contains(ech.UserId) && CanViewEcho(ech) && ech.CommParentId == null)
                                         .OrderByDescending(ech => ech.DateCreated);
 
                 ViewBag.NonComments = nonCommentEchoes;
@@ -73,7 +77,8 @@ namespace BAtwitter_DAW_2526.Controllers
                                         .Include(ech => ech.Flock)
                                         .ToList()
                                         .Where(ech => ((ech.Content != null && ech.Content.Contains(search)) || (ech.Flock != null && ech.Flock.Name.Contains(search))) &&
-                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && CanViewEcho(ech) && ech.CommParentId != null)
+                                                        !ech.IsRemoved && ech.UserId != deletedUser!.Id && 
+                                                        !blockedUserIds.Contains(ech.UserId) && CanViewEcho(ech) && ech.CommParentId != null)
                                         .OrderByDescending(ech => ech.DateCreated);
 
                 ViewBag.Comments = commentEchoes;
@@ -106,8 +111,12 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     var userProfiles = db.UserProfiles
                                         .Include(up => up.ApplicationUser)
+                                        .Include(up => up.SentRelations)
+                                        .Include(up => up.ReceivedRelations)
                                         .ToList()
-                                        .Where(up => CanViewPrivs(up) && !up.AccountStatus.Equals("deleted") && up.ApplicationUser!.UserName!.Contains(search) || up.DisplayName.Contains(search))
+                                        .Where(up => CanViewPrivs(up) && !up.AccountStatus.Equals("deleted") && 
+                                                  !blockedUserIds.Contains(up.Id) && 
+                                                  ((up.ApplicationUser!.UserName!.Contains(search)) || (up.DisplayName.Contains(search))))
                                         .OrderByDescending(up => up.JoinDate);
                     ViewBag.Users = userProfiles;
                 }
@@ -116,7 +125,8 @@ namespace BAtwitter_DAW_2526.Controllers
                     var userProfiles = db.UserProfiles
                                         .Include(up => up.ApplicationUser)
                                         .ToList()
-                                        .Where(up => up.AccountStatus.Equals("active") && (up.ApplicationUser!.UserName!.Contains(search) || up.DisplayName.Contains     (search)))
+                                        .Where(up => up.AccountStatus.Equals("active") && 
+                                                  ((up.ApplicationUser!.UserName!.Contains(search)) || (up.DisplayName.Contains(search))))
                                         .OrderByDescending(up => up.JoinDate);
                     ViewBag.Users = userProfiles;
                 }
@@ -140,12 +150,25 @@ namespace BAtwitter_DAW_2526.Controllers
                 return Json(new { success = false, error = "Not logged in!" });
             }
 
-            Echo? echo = db.Echoes.Find(EchoId);
+            Echo? echo = db.Echoes
+                .Include(e => e.User)
+                .FirstOrDefault(e => e.Id == EchoId);
+            
             if (echo == null)
             {
                 TempData["message"] = "Not logged in!";
                 TempData["type"] = "alert-danger";
                 return Json(new { success = false, error = "Echo does not exist!" });
+            }
+
+            // Check if users are blocked
+            var isBlocked = db.Relations
+                .Any(r => (r.SenderId == userId && r.ReceiverId == echo.UserId && r.Type == -1) ||
+                          (r.SenderId == echo.UserId && r.ReceiverId == userId && r.Type == -1));
+
+            if (isBlocked)
+            {
+                return Json(new { success = false, error = "You cannot interact with this user's content." });
             }
 
             Interaction? inter = db.Interactions.Find(userId, EchoId);
@@ -226,12 +249,30 @@ namespace BAtwitter_DAW_2526.Controllers
                 return Json(new { success = false, error = "Not logged in!" });
             }
 
-            Echo? echo = db.Echoes.Find(EchoId);
+            Echo? echo = db.Echoes
+                .Include(e => e.User)
+                .FirstOrDefault(e => e.Id == EchoId);
+            
             if (echo == null)
             {
                 TempData["message"] = "Not logged in!";
                 TempData["type"] = "alert-danger";
                 return Json(new { success = false, error = "Echo does not exist!" });
+            }
+
+            // Check if users are blocked (bidirectional)
+            var isBlocked = db.Relations
+                .Any(r => (r.SenderId == userId && r.ReceiverId == echo.UserId && r.Type == -1) ||
+                          (r.SenderId == echo.UserId && r.ReceiverId == userId && r.Type == -1));
+
+            if (isBlocked)
+            {
+                return Json(new { 
+                    success = false, 
+                    error = "You cannot interact with this user's content.",
+                    isRebounded = false,
+                    reboundCount = echo.ReboundCount
+                });
             }
 
             Interaction? inter = db.Interactions.Find(userId, EchoId);
@@ -327,10 +368,23 @@ namespace BAtwitter_DAW_2526.Controllers
                 return Json(new { success = false, error = "Not logged in!" });
             }
 
-            Echo? echo = db.Echoes.Find(EchoId);
+            Echo? echo = db.Echoes
+                .Include(e => e.User)
+                .FirstOrDefault(e => e.Id == EchoId);
+            
             if (echo == null)
             {
                 return Json(new { success = false, error = "Echo does not exist!" });
+            }
+
+            // Check if users are blocked
+            var isBlocked = db.Relations
+                .Any(r => (r.SenderId == userId && r.ReceiverId == echo.UserId && r.Type == -1) ||
+                          (r.SenderId == echo.UserId && r.ReceiverId == userId && r.Type == -1));
+
+            if (isBlocked)
+            {
+                return Json(new { success = false, error = "You cannot interact with this user's content." });
             }
 
             Interaction? inter = db.Interactions.Find(userId, EchoId);
@@ -397,13 +451,40 @@ namespace BAtwitter_DAW_2526.Controllers
             });
         }
 
+        // Helper method to get list of blocked user IDs (bidirectional)
+        private List<string> GetBlockedUserIds(string? currentUserId)
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return new List<string>();
+            }
+
+            var blockedUserIds = db.Relations
+                .Where(r => (r.SenderId == currentUserId && r.Type == -1) ||
+                           (r.ReceiverId == currentUserId && r.Type == -1))
+                .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
+                .ToList();
+
+            return blockedUserIds;
+        }
+
         // Other methods
         private bool CanViewEcho(Echo echo)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var blockedUserIds = GetBlockedUserIds(currentUserId);
+            
+            // If echo user is blocked by current user or has blocked current user, don't show
+            if (!string.IsNullOrEmpty(currentUserId) && 
+                (blockedUserIds.Contains(echo.UserId) || 
+                 echo.User!.SentRelations.Any(rel => rel.ReceiverId == currentUserId && rel.Type == -1)))
+            {
+                return false;
+            }
+
             return User.IsInRole("Admin") || echo.User!.AccountStatus.Equals("active")
-               || (!echo.User!.SentRelations.Any(rel => rel.ReceiverId == _userManager.GetUserId(User) && rel.Type == -1))
-               || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == _userManager.GetUserId(User) && rel.Type == 1))
-               || echo.UserId == _userManager.GetUserId(User);
+               || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == currentUserId && rel.Type == 1))
+               || echo.UserId == currentUserId;
         }
 
         private bool CanViewPrivs(UserProfile usr)

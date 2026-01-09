@@ -32,9 +32,9 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - Add click event to follows/followers display name / username
         //          DONE - No login into "deleted" accounts
         //          DONE - When UnfollowUser, if from Followers / Following redirect to own page instead
-        //   IN PROGRESS - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului cu un searchbar (does not work yet at all basically)
-        // Make regular user delete not assign posts to deleted user, only admin delete (?????????????)
-        // Block Users (maybe Flocks as well care da block la toti userii din flock?)
+        //          DONE - Block Users
+        //          DONE CRED??? Make regular user delete not assign posts to deleted user, only admin delete (?????????????)
+        //          IN PROGRESS- Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCH BAR NU FUNCTIONEAZA)
         // ADD AI FUNCTIONALITY
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
         // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, ### LoginPartial modificat - DONE ###,
@@ -645,6 +645,169 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", "Flocks", new { id = flockId });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult BlockUser(string userIdToBlock)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                TempData["followrequest-message"] = "You must be logged in to block a user.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var userToBlock = db.UserProfiles
+                .Include(u => u.ApplicationUser)
+                .FirstOrDefault(u => u.Id == userIdToBlock);
+
+            if (userToBlock == null)
+            {
+                TempData["followrequest-message"] = "User not found.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "UserProfiles");
+            }
+
+            if (userIdToBlock == currentUserId)
+            {
+                TempData["followrequest-message"] = "You cannot block yourself.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Show", "UserProfiles", new { username = userToBlock.ApplicationUser?.UserName });
+            }
+
+           
+            // Check if user is already blocked
+            var existingBlock = db.Relations
+                .FirstOrDefault(r => r.SenderId == currentUserId && r.ReceiverId == userIdToBlock && r.Type == -1);
+
+            if (existingBlock != null)
+            {
+                TempData["followrequest-message"] = "You have already blocked this user.";
+                TempData["followrequest-type"] = "alert-info";
+                return RedirectToAction("Show", "UserProfiles", new { username = userToBlock.ApplicationUser?.UserName });
+            }
+
+            // Check if there's any existing relation (regardless of type) with the same primary key
+            var existingRelation = db.Relations
+                .FirstOrDefault(r => r.SenderId == currentUserId && r.ReceiverId == userIdToBlock);
+
+            if (existingRelation != null)
+            {
+                // Update existing relation to block type
+                existingRelation.Type = -1;
+                existingRelation.relationDate = DateTime.Now;
+            }
+            else
+            {
+                // Create new block relation
+                var blockRelation = new Relation
+                {
+                    SenderId = currentUserId,
+                    ReceiverId = userIdToBlock,
+                    relationDate = DateTime.Now,
+                    Type = -1 // blocked
+                };
+                db.Relations.Add(blockRelation);
+            }
+
+            // Remove reverse follow relationship if it exists
+            var reverseFollow = db.Relations
+                .FirstOrDefault(r => r.SenderId == userIdToBlock && r.ReceiverId == currentUserId && r.Type == 1);
+
+            if (reverseFollow != null)
+            {
+                db.Relations.Remove(reverseFollow);
+            }
+
+            // Remove any pending follow requests (both directions)
+            var sentRequests = db.FollowRequests
+                .Where(fr => (fr.SenderUserId == currentUserId && fr.ReceiverUserId == userIdToBlock && fr.ReceiverFlockId == null) ||
+                            (fr.SenderUserId == userIdToBlock && fr.ReceiverUserId == currentUserId && fr.ReceiverFlockId == null))
+                .ToList();
+
+            if (sentRequests.Any())
+            {
+                db.FollowRequests.RemoveRange(sentRequests);
+            }
+
+            db.SaveChanges();
+
+            TempData["followrequest-message"] = "User has been blocked successfully.";
+            TempData["followrequest-type"] = "alert-success";
+            return RedirectToAction("Show", "UserProfiles", new { username = userToBlock.ApplicationUser?.UserName });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult UnblockUser(string userIdToUnblock)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                TempData["followrequest-message"] = "You must be logged in to unblock a user.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var userToUnblock = db.UserProfiles
+                .Include(u => u.ApplicationUser)
+                .FirstOrDefault(u => u.Id == userIdToUnblock);
+
+            if (userToUnblock == null)
+            {
+                TempData["followrequest-message"] = "User not found.";
+                TempData["followrequest-type"] = "alert-warning";
+                return RedirectToAction("BlockedUsers");
+            }
+
+       
+            var blockRelation = db.Relations
+                .FirstOrDefault(r => r.SenderId == currentUserId && r.ReceiverId == userIdToUnblock && r.Type == -1);
+
+            if (blockRelation == null)
+            {
+                TempData["followrequest-message"] = "This user is not blocked.";
+                TempData["followrequest-type"] = "alert-info";
+                return RedirectToAction("BlockedUsers");
+            }
+
+            db.Relations.Remove(blockRelation);
+            db.SaveChanges();
+
+            TempData["followrequest-message"] = "User has been unblocked successfully.";
+            TempData["followrequest-type"] = "alert-success";
+            return RedirectToAction("BlockedUsers");
+        }
+
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult BlockedUsers()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account", "Identity");
+            }
+
+            var blockedUsers = db.Relations
+                .Include(r => r.Receiver!)
+                    .ThenInclude(u => u.ApplicationUser)
+                .Where(r => r.SenderId == currentUserId && r.Type == -1)
+                .OrderByDescending(r => r.relationDate)
+                .Select(r => r.Receiver)
+                .ToList();
+
+            ViewBag.BlockedUsers = blockedUsers;
+            ViewBag.CurrentUser = currentUserId;
+
+            if (TempData.ContainsKey("followrequest-message"))
+            {
+                ViewBag.Message = TempData["followrequest-message"];
+                ViewBag.Type = TempData["followrequest-type"];
+            }
+
+            ViewBag.Title = "Blocked Users";
+            return View();
+        }
 
         [Authorize(Roles = "User, Admin")]
         public IActionResult PendingUserRequests()

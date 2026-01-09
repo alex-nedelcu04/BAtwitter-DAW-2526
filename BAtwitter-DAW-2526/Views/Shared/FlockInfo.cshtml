@@ -72,42 +72,43 @@
         <!-- JOIN BUTTON -->
         @if (Model.AdminId != ViewBag.CurrentUser && !showRecent && Model.FlockStatus != "deleted" && !string.IsNullOrEmpty(ViewBag.CurrentUser))
         {
-            @if (ViewBag.IsMember == true)
-            {
-                <form method="post" asp-controller="FollowRequests" asp-action="UnfollowFlock" asp-route-flockId="@Model.Id" asp-route-userId="@ViewBag.CurrentUser" onclick="event.stopPropagation();">
-                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Member</button>
+            <div class="d-flex flex-row justify-content-start mt-3 gap-2">
+                @if (ViewBag.IsMember == true)
+                {
+                    <form method="post" asp-controller="FollowRequests" asp-action="UnfollowFlock" asp-route-flockId="@Model.Id" asp-route-userId="@ViewBag.CurrentUser" onclick="event.stopPropagation();">
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#unfollowModal">Member</button>
 
-                    <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-body">Are you sure you want to unfollow this flock?</div>
-                                <div class="modal-footer d-flex justify-content-between">
-                                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
-                                    <button type="submit" class="btn btn-success">Yes</button>
+                        <div class="modal fade" id="unfollowModal" tabindex="-1" aria-labelledby="unfolowModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-body">Are you sure you want to unfollow this flock?</div>
+                                    <div class="modal-footer d-flex justify-content-between">
+                                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
+                                        <button type="submit" class="btn btn-success">Yes</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </form>
-            }
-            else if (ViewBag.HasPendingRequest == true)
-            {
-                <div class="d-flex flex-row justify-content-start mt-3 gap-2">
+                    </form>
+                }
+                else if (ViewBag.HasPendingRequest == true)
+                {
                     <form method="post" asp-controller="FollowRequests" asp-action="CancelFlockJoinRequest" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
                         <button class="btn btn-warning" type="submit">Cancel Join Request</button>
                     </form>
-                </div>
-            }
-            else
-            {
-                <div class="d-flex flex-row justify-content-start mt-3">
+                }
+                else
+                {
                     <form method="post" asp-controller="FollowRequests" asp-action="SendFlockJoinRequest" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
                         <button class="btn btn-primary" type="submit">
                             <i class="bi bi-people"></i> Request to Join
                         </button>
                     </form>
-                </div>
-            }
+                }
+                <a class="btn btn-outline-primary" asp-controller="Flocks" asp-action="Members" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                    <i class="bi bi-people"></i> Members
+                </a>
+            </div>
         }
 
         <!-- MODIFY AND DELETE BUTTONS -->
@@ -127,8 +128,11 @@
                 @if (Model.AdminId == ViewBag.CurrentUser && !inAdmin)
                 {
                     <div class="d-flex flex-row justify-content-between mt-3">
-                        <div class="d-flex flex-row justify-content-between">
+                        <div class="d-flex flex-row justify-content-between gap-2">
                             <a class="btn btn-success" asp-controller="Flocks" asp-action="Edit" asp-route-id="@Model.Id" onclick="event.stopPropagation();">Modify Flock</a>
+                            <a class="btn btn-outline-primary" asp-controller="Flocks" asp-action="Members" asp-route-id="@Model.Id" onclick="event.stopPropagation();">
+                                <i class="bi bi-people"></i> Members
+                            </a>
                             <a class="btn btn-outline-primary" asp-controller="FollowRequests" asp-action="PendingFlockRequests" asp-route-flockId="@Model.Id" onclick="event.stopPropagation();">
                                 <i class="bi bi-envelope"></i> Join Requests
                             </a>

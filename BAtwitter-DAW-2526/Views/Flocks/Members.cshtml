@@ -1,0 +1,115 @@
+@model BAtwitter_DAW_2526.Models.Flock
+
+@if (ViewBag.Message != null)
+{
+    <h2 class="p-3 rounded-3 text-center mb-5 alert @ViewBag.Type">@ViewBag.Message</h2>
+}
+
+<ul class="nav nav-tabs mb-3" id="tabs_flockMembers" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab" aria-controls="members-tab-pane" aria-selected="true">Members</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs_flockMembers_content">
+    <div class="tab-pane fade show active" id="members" role="tabpanel" aria-labelledby="members-tab" tabindex="0">
+        @if (ViewBag.Members != null && ((List<BAtwitter_DAW_2526.Models.FlockUser>)ViewBag.Members).Count > 0)
+        {
+            var membersList = (List<BAtwitter_DAW_2526.Models.FlockUser>)ViewBag.Members;
+            var admin = membersList.FirstOrDefault(m => m.UserId == Model.AdminId);
+            var regularMembers = membersList.Where(m => m.UserId != Model.AdminId).ToList();
+            
+            <!-- ADMIN SECTION -->
+            @if (admin != null && admin.User != null && admin.User.ApplicationUser != null)
+            {
+                <h6 class="text-muted mb-3">Admin:</h6>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(admin.User.PfpLink))
+                                {
+                                    <a href="@Url.Action("Show", "UserProfiles", new { username = admin.User.ApplicationUser.UserName })" class="text-decoration-none me-3">
+                                        <img src="@admin.User.PfpLink" alt="Profile Picture" class="rounded-circle"
+                                             style="width: 64px; height: 64px; object-fit: cover;" />
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle bg-secondary me-3" style="width: 64px; height: 64px;"></div>
+                                }
+                                <div>
+                                    <h5 class="mb-0">
+                                        <a href="@Url.Action("Show", "UserProfiles", new { username = admin.User.ApplicationUser.UserName })"
+                                           class="text-decoration-none">
+                                            @admin.User.DisplayName
+                                        </a>
+                                        <span class="badge bg-danger ms-2">Admin</span>
+                                    </h5>
+                                    <small class="text-muted">@@@admin.User.ApplicationUser.UserName</small>
+                                    <br />
+                                    <small class="text-muted">Joined: @admin.JoinDate.ToString("MMM d, yyyy")</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- REGULAR MEMBERS SECTION -->
+            @if (regularMembers.Count > 0)
+            {
+                <h6 class="text-muted mb-3">Members:</h6>
+                @foreach (var member in regularMembers)
+                {
+                    @if (member.User != null && member.User.ApplicationUser != null)
+                    {
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(member.User.PfpLink))
+                                        {
+                                            <a href="@Url.Action("Show", "UserProfiles", new { username = member.User.ApplicationUser.UserName })" class="text-decoration-none me-3">
+                                                <img src="@member.User.PfpLink" alt="Profile Picture" class="rounded-circle"
+                                                     style="width: 64px; height: 64px; object-fit: cover;" />
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary me-3" style="width: 64px; height: 64px;"></div>
+                                        }
+                                        <div>
+                                            <h5 class="mb-0">
+                                                <a href="@Url.Action("Show", "UserProfiles", new { username = member.User.ApplicationUser.UserName })"
+                                                   class="text-decoration-none">
+                                                    @member.User.DisplayName
+                                                </a>
+                                                @if (member.Role == "moderator")
+                                                {
+                                                    <span class="badge bg-warning ms-2">Moderator</span>
+                                                }
+                                            </h5>
+                                            <small class="text-muted">@@@member.User.ApplicationUser.UserName</small>
+                                            <br />
+                                            <small class="text-muted">Joined: @member.JoinDate.ToString("MMM d, yyyy")</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        }
+        else
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-0">No members found.</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
