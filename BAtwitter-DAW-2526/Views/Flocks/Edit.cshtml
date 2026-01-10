@@ -1,5 +1,9 @@
 ﻿@model BAtwitter_DAW_2526.Models.Flock
 
+@{
+    bool showLock = Model.Admin!.AccountStatus.Equals("private");
+}
+
 <div class="container mt-3">
     <div class="row justify-content-center">
         <div class="col-7">
@@ -18,27 +22,39 @@
                 <div class="mb-3">
                     <label class="form-label">Select Admin</label>
 
-                    <div class="dropdown w-100">
-                        <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="userDropdownButton" data-bs-toggle="dropdown">
-                            -- Select a User --
-                        </button>
+                    <!-- Hidden value posted to controller -->
+                    <input type="hidden" asp-for="AdminId" id="SelectedUserId" value="@ViewBag.PreselectedUserId" />
 
-                        <!-- ⬇️ max-height + scroll added here -->
-                        <div class="dropdown-menu w-100 p-2 user-dropdown-menu">
+                    <div class="user-picker">
+                        <!-- This is the only visible control (like your sketch) -->
+                        <input type="text"
+                               class="form-control"
+                               id="userSearchInput"
+                               placeholder="Search user..."
+                               autocomplete="off" />
 
-                            <!-- Filter -->
-                            <div class="sticky-top p-2 bg-body">
-                                <input type="text" class="form-control mb-2" placeholder="Search users..." id="userFilter" />
-                            </div>
-
+                        <!-- Dropdown list -->
+                        <div class="user-picker-menu shadow-sm" id="userPickerMenu" role="listbox" aria-label="Users">
                             @foreach (dynamic user in ViewBag.Users)
                             {
-                                <button type="button" class="dropdown-item d-flex align-items-center user-item" data-user-id="@user.Id" data-display-name="@user.DisplayName" data-search="@($"{user.UserName} {user.DisplayName}".ToLower())">
+                                bool userLock = (user.AccountStatus?.ToString() == "private");
 
-                                    <img src="@user.PfpLink" class="rounded-circle me-2" width="32" height="32" />
-
+                                <button type="button"
+                                        class="user-picker-item"
+                                        role="option"
+                                        data-user-id="@user.Id"
+                                        data-display-name="@user.DisplayName"
+                                        data-username="@user.UserName"
+                                        data-search="@($"{user.UserName} {user.DisplayName}".ToLower())">
+                                    <img src="@user.PfpLink" class="rounded-circle" width="32" height="32" />
                                     <div class="text-start">
-                                        <div class="fw-semibold">@user.DisplayName</div>
+                                        <div class="fw-semibold">
+                                            @user.DisplayName       
+                                            @if (userLock)
+                                            {
+                                                <i class="bi bi-lock-fill fs-6"></i>
+                                            }
+                                        </div>
                                         <small class="text-muted">@("@" + user.UserName)</small>
                                     </div>
                                 </button>
@@ -48,6 +64,7 @@
 
                     <span asp-validation-for="AdminId" class="text-danger"></span>
                 </div>
+
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label">Description</label>
@@ -126,59 +143,144 @@
 </div>
 
 <style>
-    .user-dropdown-menu {
-        max-height: 320px; /* 5 items */
+    .user-picker {
+        position: relative;
+    }
+
+    .user-picker-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        width: 100%;
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 6px;
+        display: none; /* hidden until focus */
+        z-index: 1050;
+        max-height: 320px; /* ≈ “h items” */
         overflow-y: auto;
     }
 
-    /* Optional: highlight preselected item */
-    .user-dropdown-menu .user-item.active {
-        background-color: #0d6efd;
-        color: white;
+        .user-picker-menu.show {
+            display: block;
+        }
+
+    .user-picker-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: left;
     }
 
-    /* Sticky search bar style (already set by sticky-top) */
-    .user-dropdown-menu .sticky-top {
-        z-index: 10;
-    }
+        .user-picker-item:hover {
+            background: rgba(13,110,253,.10);
+        }
+
+        .user-picker-item.active {
+            background: #0d6efd;
+            color: #fff;
+        }
+
+            .user-picker-item.active small {
+                color: rgba(255,255,255,.8) !important;
+            }
+
 </style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const filterInput = document.getElementById("userFilter");
-        const userItems = document.querySelectorAll(".user-item");
-        const hiddenInput = document.getElementById("SelectedUserId");
-        const dropdownButton = document.getElementById("userDropdownButton");
+        const input = document.getElementById("userSearchInput");
+        const menu = document.getElementById("userPickerMenu");
+        const items = Array.from(document.querySelectorAll(".user-picker-item"));
+        const hidden = document.getElementById("SelectedUserId");
 
-        filterInput.addEventListener("keyup", function () {
-            const value = this.value.toLowerCase();
-            userItems.forEach(item => {
-                item.style.display = item.dataset.search.includes(value) ? "" : "none";
+        function openMenu() {
+            menu.classList.add("show");
+        }
+
+        function closeMenu() {
+            menu.classList.remove("show");
+        }
+
+        function updateMenuVisibilityAfterFilter() {
+            const anyVisible = items.some(btn => btn.style.display !== "none");
+            if (!anyVisible) closeMenu();
+        }
+
+        function filterList(q) {
+            const value = (q || "").toLowerCase().trim();
+            items.forEach(btn => {
+                const ok = btn.dataset.search.includes(value);
+                btn.style.display = ok ? "" : "none";
+            });
+            updateMenuVisibilityAfterFilter();
+        }
+
+        function setActive(userId) {
+            items.forEach(x => x.classList.remove("active"));
+            const chosen = items.find(x => x.dataset.userId === userId);
+            if (chosen) chosen.classList.add("active");
+        }
+
+        // Open + filter when focusing/typing (like your sketch)
+        input.addEventListener("focus", () => {
+            openMenu();
+            filterList(input.value);
+        });
+
+        input.addEventListener("input", () => {
+            openMenu();
+            filterList(input.value);
+        });
+
+        // Select user
+        items.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const userId = btn.dataset.userId;
+                const display = btn.dataset.displayName;
+
+                hidden.value = userId;      // real selected AdminId
+                input.value = display;      // search query becomes selected value (as in sketch)
+                setActive(userId);
+                closeMenu();
             });
         });
 
-        userItems.forEach(item => {
-            item.addEventListener("click", function () {
-                hiddenInput.value = this.dataset.userId;
-                dropdownButton.innerText = this.dataset.displayName;
-            });
-        });
-
-        const preselectedUserId = "@ViewBag.PreselectedUserId";
-
-        if (preselectedUserId) {
-            const preselectedItem = document.querySelector(
-                `.user-item[data-user-id='${preselectedUserId}']`
-            );
-
-            if (preselectedItem) {
-                hiddenInput.value = preselectedUserId;
-                dropdownButton.innerText = preselectedItem.dataset.displayName;
-                preselectedItem.classList.add("active");
+        // Close on outside click
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".user-picker")) {
+                closeMenu();
             }
+        });
+
+        // Close on ESC
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeMenu();
+        });
+
+        // Preselect (Edit form)
+        const preselectedUserId = "@ViewBag.PreselectedUserId";
+        if (preselectedUserId) {
+            const chosen = items.find(x => x.dataset.userId === preselectedUserId);
+            if (chosen) {
+                hidden.value = preselectedUserId;
+                input.value = chosen.dataset.displayName;  // show current admin in the input
+                setActive(preselectedUserId);
+            }
+        } else {
+            // Optional: if there is already a Model.AdminId and you want to reflect it
+            // (only if you pass it to ViewBag or render it similarly)
         }
     </script>
+
     <script>
         // Profile Picture Preview
         const pfpInput = document.getElementById('pfp');

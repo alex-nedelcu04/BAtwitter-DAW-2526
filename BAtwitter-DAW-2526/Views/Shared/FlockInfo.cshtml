@@ -54,7 +54,7 @@
                 <p class="mb-1">created at: @Model.DateCreated.ToString("HH:mm") - @Model.DateCreated.ToString("MMM d, yyyy")</p>
                 @if (!string.IsNullOrEmpty(adminUsername))
                 {
-                    <p class="mb-0">admin: @("@" + adminUsername)</p>
+                    <p class="mb-0">admin: <a href="@Url.Action("Show", "UserProfiles", new { username = adminUsername })" class="text-decoration-none">@("@" + adminUsername)</a></p>
                 }
             </div>
 

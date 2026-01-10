@@ -33,11 +33,11 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - No login into "deleted" accounts
         //          DONE - When UnfollowUser, if from Followers / Following redirect to own page instead
         //          DONE - Block Users
-        //          DONE CRED??? Make regular user delete not assign posts to deleted user, only admin delete (?????????????)
-        //          IN PROGRESS- Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCH BAR NU FUNCTIONEAZA)
-        // Mesaj gresit cand intri pe o postare a cuiva blocat
-        // Mark as deleted admin sterge si comentariile si le atribuie la deleted user
-        // Block ul chiar daca e unidirectional afecteaza ambele directii
+        //          DONE - Make regular user delete not assign posts to deleted user, only admin delete
+        //          DONE - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCHBAR NU FUNCTIONEAZA)
+        //          DONE - Mesaj gresit cand intri pe o postare a cuiva blocat
+        //          DONE - Mark as deleted admin sterge si comentariile si le atribuie la deleted user
+        //          DONE - Block ul chiar daca e unidirectional afecteaza ambele directii
         // ADD AI FUNCTIONALITY
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
         // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, ### LoginPartial modificat - DONE ###,
@@ -523,7 +523,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index", "Flocks");
             }
 
-            if (flock.AdminId != currentUserId && !User.IsInRole("Admin"))
+            if (flock.AdminId != currentUserId)
             {
                 TempData["followrequest-message"] = "You are not authorized to accept join requests for this flock.";
                 TempData["followrequest-type"] = "alert-warning";
@@ -587,7 +587,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 TempData["followrequest-type"] = "alert-warning";
                 return RedirectToAction("Index", "Flocks");
             }
-            if (flock.AdminId != currentUserId && !User.IsInRole("Admin"))
+            if (flock.AdminId != currentUserId)
             {
                 TempData["followrequest-message"] = "You are not authorized to reject join requests for this flock.";
                 TempData["followrequest-type"] = "alert-warning";
@@ -873,7 +873,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index", "Flocks");
             }
 
-            if (flock.AdminId != currentUserId && !User.IsInRole("Admin"))
+            if (flock.AdminId != currentUserId)
             {
                 TempData["followrequest-message"] = "You are not authorized to view join requests for this flock.";
                 TempData["followrequest-type"] = "alert-warning";

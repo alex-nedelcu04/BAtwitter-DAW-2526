@@ -242,19 +242,14 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (flock.AdminId == _userManager.GetUserId(User))
             {
-                var memberUserIds = db.FlockUsers
-                    .Where(fu => fu.FlockId == id && fu.Role == "member")
-                    .Select(fu => fu.UserId)
-                    .ToList();
 
                 var users = db.UserProfiles
                                .Include(u => u.ApplicationUser)
                                .Include(u => u.SentRelations)
                                .Include(u => u.ReceivedRelations)
-                               .Where(u => memberUserIds.Contains(u.Id))
                                .ToList()
                                .Where(u => CanViewProfile(u))
-                               .Select(u => new { u.Id, UserName = u.ApplicationUser!.UserName!, u.DisplayName, u.PfpLink });
+                               .Select(u => new { u.Id, UserName = u.ApplicationUser!.UserName!, u.DisplayName, u.PfpLink, u.AccountStatus });
 
                 ViewBag.Users = users;
                 ViewBag.PreselectedUserId = flock.AdminId;
@@ -433,12 +428,12 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
                 // (comentariile vor fi atribuite recursiv, chiar daca au FlockId setat)
                 var flockEchoes = db.Echoes
-                    .Where(e => e.FlockId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                    .Where(e => e.FlockId == id)
                     .ToList();
 
                 foreach (var echo in flockEchoes)
                 {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    echo.IsRemoved = true;
                 }
                 
                 db.SaveChanges();
@@ -531,12 +526,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Atribuie recursiv toate echo-urile principale din flock si comentariile lor la utilizatorul deleted
                 // (comentariile vor fi atribuite recursiv, chiar daca au FlockId setat)
                 var flockEchoes = db.Echoes
-                    .Where(e => e.FlockId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                    .Where(e => e.FlockId == id)
                     .ToList();
 
                 foreach (var echo in flockEchoes)
                 {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                    echo.FlockId = null;
+                    echo.IsRemoved = true;
                 }
 
                 db.SaveChanges();
@@ -617,7 +613,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
                     foreach (var echo in flockEchoes)
                     {
-                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                        echo.IsRemoved = true;
                     }
 
                     db.SaveChanges();
@@ -679,7 +675,8 @@ namespace BAtwitter_DAW_2526.Controllers
 
                     foreach (var echo in flockEchoes)
                     {
-                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id);
+                        echo.IsRemoved = true;
+                        echo.FlockId = null;
                     }
 
                     db.SaveChanges();
@@ -830,11 +827,6 @@ namespace BAtwitter_DAW_2526.Controllers
 
             ViewBag.CurrentUser = _userManager.GetUserId(User);
             ViewBag.IsAdmin = User.IsInRole("Admin");
-
-            if (User.IsInRole("Editor"))
-            {
-                ViewBag.VisibleShowDelete = true;
-            }
         }
 
         private void DeletePhysicalFile(string relativePath)
@@ -849,6 +841,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 System.IO.File.Delete(physicalPath);
             }
         }
+           /*
 
         // Atribuie echo și comentarii recursiv la utilizatorul deleted
         private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
@@ -866,6 +859,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
             }
         }
+        */
 
         private bool CanViewProfile(UserProfile user)
         {

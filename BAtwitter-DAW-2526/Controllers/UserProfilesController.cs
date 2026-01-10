@@ -96,7 +96,6 @@ namespace BAtwitter_DAW_2526.Controllers
                 .FirstOrDefault() ?? string.Empty;
 
             var currentUserId = _userManager.GetUserId(User);
-            var blockedUserIds = GetBlockedUserIds(currentUserId);
 
             var followers = db.Relations
                                 .Include(rel => rel.Sender!.SentRelations)
@@ -105,7 +104,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1)
                                 .OrderBy(rel => rel.relationDate)
                                 .Select(rel => rel.Sender)
-                                .Where(sender => sender != null && (User.IsInRole("Admin") || !blockedUserIds.Contains(sender.Id)))
+                                .Where(sender => sender != null)
                                 .ToList();
 
             ViewBag.CurrentUser = currentUserId;
@@ -173,14 +172,13 @@ namespace BAtwitter_DAW_2526.Controllers
                 .FirstOrDefault() ?? string.Empty;
 
             var currentUserId = _userManager.GetUserId(User);
-            var blockedUserIds = GetBlockedUserIds(currentUserId);
 
             var follows = db.Relations
                             .Include(rel => rel.Receiver!.ApplicationUser)
                             .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1)
                             .OrderBy(rel => rel.relationDate)
                             .Select(rel => rel.Receiver)
-                            .Where(receiver => receiver != null && (User.IsInRole("Admin") || !blockedUserIds.Contains(receiver.Id)))
+                            .Where(receiver => receiver != null)
                             .ToList();
 
             ViewBag.CurrentUser = currentUserId;
@@ -465,7 +463,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 foreach (var echo in userEchoes)
                 {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, false);
+                    echo.IsRemoved = true;
                 }
 
                 var userFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
@@ -570,8 +568,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 .FirstOrDefault() ?? string.Empty;
 
             var currentUserId = _userManager.GetUserId(User);
-            var blockedUserIds = GetBlockedUserIds(currentUserId);
-
+   
             var echoes = db.Echoes
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
@@ -586,12 +583,10 @@ namespace BAtwitter_DAW_2526.Controllers
 
             // Count follows and followers excluding blocked users (except admin)
             var followsCount = db.Relations
-                .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1 && 
-                             (User.IsInRole("Admin") || currentUserId == null || !blockedUserIds.Contains(rel.ReceiverId)))
+                .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1)
                 .Count();
             var followersCount = db.Relations
-                .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1 && 
-                             (User.IsInRole("Admin") || currentUserId == null || !blockedUserIds.Contains(rel.SenderId)))
+                .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1)
                 .Count();
 
             ViewBag.CurrentUser = currentUserId;
@@ -816,29 +811,21 @@ namespace BAtwitter_DAW_2526.Controllers
                     db.Relations.RemoveRange(receivedRelations);
 
                     var adminFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
+                    var idRoleAdmin = db.Roles.Where(r => r.Name!.Equals("Admin")).Select(r => r.Id).FirstOrDefault();
+                    var siteAdmin = db.UserRoles.Where(ur => ur.RoleId == idRoleAdmin).Select(ur => ur.UserId).First();
                     foreach (var flock in adminFlocks)
                     {
-                        var flockEchoes = db.Echoes
-                            .Where(e => e.FlockId == flock.Id && e.UserId != deletedUser.Id && e.CommParentId == null)
-                            .ToList();
-
-                        foreach (var echo in flockEchoes)
-                        {
-                            AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, true);
-                        }
-
-                        await db.SaveChangesAsync();
-
-                        db.Flocks.Remove(flock);
+                        flock.AdminId = siteAdmin;
+                    
                     }
 
                     var userEchoes = db.Echoes
-                        .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                        .Where(e => e.UserId == id)
                         .ToList();
 
                     foreach (var echo in userEchoes)
                     {
-                        AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, true);
+                        echo.UserId = deletedUser.Id;
                     }
 
                     await db.SaveChangesAsync();
@@ -943,38 +930,6 @@ namespace BAtwitter_DAW_2526.Controllers
             }
         }
 
-        // Atribuie echo și comentarii recursiv la utilizatorul deleted
-        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId, string userId, bool remUser)
-        {
-            echo.UserId = (remUser) ? deletedUserId : userId;
-            echo.IsRemoved = true;
-
-            var comments = db.Echoes
-                            .Where(ech => ech.CommParentId == echo.Id && ech.UserId != deletedUserId)
-                            .ToList();
-
-            foreach (var comment in comments)
-            {
-                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId, userId, remUser);
-            }
-        }
-
-        // Helper method to get list of blocked user IDs (bidirectional)
-        private List<string> GetBlockedUserIds(string? currentUserId)
-        {
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                return new List<string>();
-            }
-
-            var blockedUserIds = db.Relations
-                .Where(r => (r.SenderId == currentUserId && r.Type == -1) ||
-                           (r.ReceiverId == currentUserId && r.Type == -1))
-                .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
-                .ToList();
-
-            return blockedUserIds;
-        }
 
         private bool IsProfileUnviewable(UserProfile user)
         {

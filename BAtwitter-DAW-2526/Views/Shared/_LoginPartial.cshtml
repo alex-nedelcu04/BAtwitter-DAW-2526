@@ -39,7 +39,7 @@
 
             <div class="d-flex flex-column me-3">
                 <div class="d-flex align-items-center gap-0">
-                    <a asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" class="fw-semibold text-truncate text-decoration-none link-body-emphasis" style="min-width: 0; display: block; max-width: 65%; word-wrap: break-word; overflow-wrap: break-word;">
+                    <a asp-controller="UserProfiles" asp-action="Show" asp-route-username="@username" class="fw-semibold text-truncate text-decoration-none link-body-emphasis" style="min-width: 0; display: block; max-width: 80%; word-wrap: break-word; overflow-wrap: break-word;">
                         @(displayname ?? "Unknown user")
                     </a>
                     @if (showLock != null && showLock == true)
