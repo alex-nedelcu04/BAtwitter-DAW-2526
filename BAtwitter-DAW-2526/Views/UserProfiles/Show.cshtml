@@ -10,16 +10,9 @@
         You have been blocked by this user.
     </small>
 }
-else if (ViewBag.HasBlocked)
-{
-    <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-        You have blocked this user.
-    </small>
-    <!-- Aici ar trebui sa bagam un yes/no sub forma a doua taburi si dupa ce schimbi de la yes la no dispar taburile si aia e tot sau cv de genul -->
-}
 
 @* Afiseaza postarile daca nu esti blocat de utilizator, nu ai blocat utilizatorul (sau esti admin) *@
-@if (User.IsInRole("Admin") || (!ViewBag.IsBlockedBy && !ViewBag.HasBlocked))
+@if (User.IsInRole("Admin") || !ViewBag.IsBlockedBy)
 {
     @if (ViewBag.IsPrivateAccount && Model.Id != ViewBag.CurrentUser && !ViewBag.IsFollowing && !User.IsInRole("Admin"))
     {
@@ -29,6 +22,13 @@ else if (ViewBag.HasBlocked)
     }
     else
     {
+        if (ViewBag.HasBlocked)
+        {
+            <small class="d-flex flex-row mt-3 mb-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+                You have blocked this user.
+            </small>
+        }
+
         @foreach (var echo in ViewBag.UserEchoes)
         {
             <partial name="EchoInfo" model="echo" />

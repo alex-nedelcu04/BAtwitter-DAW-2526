@@ -34,17 +34,20 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - When UnfollowUser, if from Followers / Following redirect to own page instead
         //          DONE - Block Users
         //          DONE - Make regular user delete not assign posts to deleted user, only admin delete
-        //          DONE - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCHBAR NU FUNCTIONEAZA)
+        //          DONE - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCHBAR FUNCTIONEAZA)
         //          DONE - Mesaj gresit cand intri pe o postare a cuiva blocat
         //          DONE - Mark as deleted admin sterge si comentariile si le atribuie la deleted user
         //          DONE - Block ul chiar daca e unidirectional afecteaza ambele directii
-        // De reparat detalii la index() echoes - cu selectarea initiala a echoes
+        //          DONE - De reparat detalii la index() echoes - cu selectarea initiala a echoes (maybe check later idk)
         //          DONE - ADD AI FUNCTIONALITY
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
+        
         // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, 
         //                                     SCOS / MODIFICAT HOME CONTROLLER, poate sa ne mai uitam peste taburile din sidebar,
         //                                     vedem ce facem cu paginile de Identity, formul de new/edit echo sa arate bine
         //                                     !!!! restrictionarea marimii AmplifyWindow si a unei postari in caz de text infinit !!!!
+        //                                     CommentRecursion, EchoInfo pentru Show si maybe EchoParent / AmplifyWindow ar trb sa afiseze mesaj daca
+        //                                      este Echo de la o persoana pe care o ai la blocked, asa cum are si adminul
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -188,7 +191,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 SenderId = currentUserId,
                 ReceiverId = receiverUserId,
-                relationDate = DateTime.Now,
+                RelationDate = DateTime.Now,
                 Type = 1 // followed
             };
 
@@ -306,7 +309,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     SenderId = senderUserId,
                     ReceiverId = currentUserId,
-                    relationDate = DateTime.Now,
+                    RelationDate = DateTime.Now,
                     Type = 1 // followed
                 };
                 db.Relations.Add(relation);
@@ -700,7 +703,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 // Update existing relation to block type
                 existingRelation.Type = -1;
-                existingRelation.relationDate = DateTime.Now;
+                existingRelation.RelationDate = DateTime.Now;
             }
             else
             {
@@ -709,7 +712,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     SenderId = currentUserId,
                     ReceiverId = userIdToBlock,
-                    relationDate = DateTime.Now,
+                    RelationDate = DateTime.Now,
                     Type = -1 // blocked
                 };
                 db.Relations.Add(blockRelation);
@@ -797,7 +800,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Include(r => r.Receiver!)
                     .ThenInclude(u => u.ApplicationUser)
                 .Where(r => r.SenderId == currentUserId && r.Type == -1)
-                .OrderByDescending(r => r.relationDate)
+                .OrderByDescending(r => r.RelationDate)
                 .Select(r => r.Receiver)
                 .ToList();
 

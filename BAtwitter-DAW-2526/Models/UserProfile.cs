@@ -8,14 +8,15 @@ namespace BAtwitter_DAW_2526.Models
         [Key]
         public string Id { get; set; } = string.Empty; // ApplicationUserId
 
-        [Required(ErrorMessage = "The user must have a diplay name \uD83D")]
+        [Required(ErrorMessage = "The user must have a display name;")]
+        [MaxLength(50, ErrorMessage = "The display name must have a maximum of 50 characters;")]
         public string DisplayName { get; set; } = string.Empty;
-        [MaxLength(150, ErrorMessage = "The description must have a maximum of 150 characters \uD83D")]
+        [MaxLength(200, ErrorMessage = "The description must have a maximum of 200 characters;")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "The user will have a profile picture \uD83D (default if not selected)")]
+        [Required(ErrorMessage = "The user must have a profile picture (default if not selected);")]
         public string PfpLink { get; set; } = "/Resources/Images/user_default_pfp.jpg";
-        [Required(ErrorMessage = "The user will have a banner \uD83D (default if not selected)")]
+        [Required(ErrorMessage = "The user must have a banner (default if not selected);")]
         public string BannerLink { get; set; } = "/Resources/Images/banner_default.jpg";
  
         public DateTime JoinDate { get; set; } = DateTime.Now;

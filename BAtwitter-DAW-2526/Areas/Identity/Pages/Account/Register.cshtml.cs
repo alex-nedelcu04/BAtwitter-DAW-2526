@@ -116,22 +116,23 @@ namespace BAtwitter_DAW_2526.Areas.Identity.Pages.Account
             public string ConfirmPassword { get; set; }
 
             // Columns for equivalence with user profile
-            [Required(ErrorMessage = "The user will have a tag \uD83D")]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 3)]
+            [Required(ErrorMessage = "The user must have a tag;")]
+            [StringLength(30, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 1)]
             [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can only contain letters, numbers, and underscores.")]
             [Display(Name = "Username")]
             public string UserName { get; set; } = string.Empty;
 
-            [Required(ErrorMessage = "The user must have a diplay name \uD83D")]
+            [Required(ErrorMessage = "The user must have a display name;")]
+            [MaxLength(50, ErrorMessage = "The display name must have a maximum of 50 characters;")]
             public string DisplayName { get; set; } = string.Empty;
-            [MaxLength(150, ErrorMessage = "The description must have a maximum of 150 characters \uD83D")]
+            [MaxLength(200, ErrorMessage = "The description must have a maximum of 200 characters;")]
             public string? Description { get; set; }
 
             public string? Pronouns { get; set; }
 
-            [Required(ErrorMessage = "The user will have a profile picture \uD83D (default if not selected)")]
+            [Required(ErrorMessage = "The user must have a profile picture (default if not selected);")]
             public string PfpLink { get; set; } = "/Resources/Images/user_default_pfp.jpg";
-            [Required(ErrorMessage = "The user will have a banner \uD83D (default if not selected)")]
+            [Required(ErrorMessage = "The user must have a banner (default if not selected);")]
             public string BannerLink { get; set; } = "/Resources/Images/banner_default.jpg";
         }
 

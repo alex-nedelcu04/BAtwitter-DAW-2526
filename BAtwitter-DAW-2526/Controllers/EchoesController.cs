@@ -323,7 +323,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (!(CanViewEcho(echo) || User.IsInRole("Admin") || echo.UserId == currentUserId))
+            if (!CanViewEcho(echo))
             {
                 TempData["message"] = "Cannot view this Echo!";
                 TempData["type"] = "alert-warning";
@@ -1241,7 +1241,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             return echo.User!.AccountStatus.Equals("active")
-               || (echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == currentUserId && rel.Type == 1))
+               || ((echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == currentUserId && rel.Type == 1)))
                || echo.UserId == currentUserId;
         }
     }

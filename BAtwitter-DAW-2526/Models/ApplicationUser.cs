@@ -11,6 +11,5 @@ namespace BAtwitter_DAW_2526.Models
     public class ApplicationUser : IdentityUser
     {
         public virtual UserProfile? UserProfile { get; set; }
-
     }
 }

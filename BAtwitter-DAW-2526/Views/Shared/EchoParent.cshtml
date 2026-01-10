@@ -21,11 +21,27 @@
     bool showLock = Model.User!.AccountStatus.Equals("private");
 }
 
+@functions {
+    bool CanViewEcho(Echo echo)
+    {
+        return User.IsInRole("Admin") || echo.User!.AccountStatus.Equals("active")
+           || ((echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1))
+           && (!echo.User!.SentRelations.Any(rel => rel.ReceiverId == ViewBag.CurrentUser && rel.Type == -1)))
+           || echo.UserId == ViewBag.CurrentUser;
+    }
+}
+
 <div class="ms-4 mt-3">
     @if (Model.IsRemoved && !User.IsInRole("Admin"))
     {
         <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
             This Echo has been removed.
+        </small>
+    }
+    else if (!CanViewEcho(Model) && !User.IsInRole("Admin"))
+    {
+        <small class="d-flex flex-row mt-3 mb-3 p-3 rounded-3 text-center align-items-center alert alert-secondary text-muted fst-italic">
+            This Echo was sent from a private account you do not follow.
         </small>
     }
     else
@@ -246,11 +262,20 @@
                     </div>
                 </div>
 
-                @if (Model.IsRemoved && User.IsInRole("Admin"))
+                @if (User.IsInRole("Admin"))
                 {
-                    <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
-                        This Echo has been removed.
-                    </small>
+                    @if (Model.IsRemoved)
+                    {
+                        <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center align-items-center alert alert-secondary text-muted fst-italic">
+                            This Echo has been removed.
+                        </small>
+                    }
+                    else if (!CanViewEcho(Model))
+                    {
+                        <small class="d-flex flex-row mt-3 mb-1 p-3 rounded-3 text-center align-items-center alert alert-secondary text-muted fst-italic">
+                            This Echo was sent from a private account you do not follow.
+                        </small>
+                    }
                 }
             </div>
         </div>

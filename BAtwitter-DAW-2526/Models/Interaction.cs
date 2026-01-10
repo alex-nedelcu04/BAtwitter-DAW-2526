@@ -14,6 +14,5 @@
 
         public virtual Echo? Echo { get; set; }
         public virtual UserProfile? User { get; set; }
-
     }
 }

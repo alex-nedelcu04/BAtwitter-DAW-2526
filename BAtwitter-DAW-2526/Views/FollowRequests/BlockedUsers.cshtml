@@ -6,6 +6,8 @@
 {
     @foreach (var blockedUser in ViewBag.BlockedUsers)
     {
+        bool showLock = blockedUser.AccountStatus.Equals("private");
+
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
@@ -27,9 +29,10 @@
                         <div>
                             <h5 class="mb-0">
                                 <a href="@Url.Action("Show", "UserProfiles", new { username = blockedUser.ApplicationUser?.UserName })"
-                                   class="text-decoration-none">
+                                   class="fw-semibold text-decoration-none link-body-emphasis">
                                     @blockedUser.DisplayName
                                 </a>
+                                @if(showLock) { <i class="bi bi-lock-fill fs-5"></i> }
                             </h5>
                             <small class="text-muted">@@@blockedUser.ApplicationUser?.UserName</small>
                             @if (!string.IsNullOrWhiteSpace(blockedUser.Description))

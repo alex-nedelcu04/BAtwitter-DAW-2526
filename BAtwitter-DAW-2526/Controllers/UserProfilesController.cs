@@ -102,7 +102,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .Include(rel => rel.Sender!.ReceivedRelations)
                                 .Include(rel => rel.Sender!.ApplicationUser)
                                 .Where(rel => rel.ReceiverId == userProfile.Id && rel.Type == 1)
-                                .OrderBy(rel => rel.relationDate)
+                                .OrderBy(rel => rel.RelationDate)
                                 .Select(rel => rel.Sender)
                                 .Where(sender => sender != null)
                                 .ToList();
@@ -176,7 +176,7 @@ namespace BAtwitter_DAW_2526.Controllers
             var follows = db.Relations
                             .Include(rel => rel.Receiver!.ApplicationUser)
                             .Where(rel => rel.SenderId == userProfile.Id && rel.Type == 1)
-                            .OrderBy(rel => rel.relationDate)
+                            .OrderBy(rel => rel.RelationDate)
                             .Select(rel => rel.Receiver)
                             .Where(receiver => receiver != null)
                             .ToList();

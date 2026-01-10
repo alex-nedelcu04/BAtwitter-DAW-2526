@@ -10,8 +10,6 @@
 
         public DateTime JoinDate { get; set; } = DateTime.Now;
 
-        public string Role { get; set; } = "member"; // member / moderator / admin
-
-
+        public string Role { get; set; } = "member"; // member / admin
     }
 }

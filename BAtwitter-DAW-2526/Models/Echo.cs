@@ -14,7 +14,7 @@ namespace BAtwitter_DAW_2526.Models
         public int? CommParentId { get; set; } // comment
         public int? AmpParentId { get; set; } // amplifier
 
-        [MaxLength(400, ErrorMessage = "The content of the post can't exceed 400 characters \uD83D")]
+        [MaxLength(500, ErrorMessage = "The content of the Echo cannot exceed 500 characters;")]
         public string? Content { get; set; }
         public string? Att1 { get; set; }
         public string? Att2 { get; set; }
@@ -31,10 +31,7 @@ namespace BAtwitter_DAW_2526.Models
         public virtual Flock? Flock { get; set; }
         public virtual UserProfile? User { get; set; }
 
-        //[ForeignKey(nameof(CommParentId))]
-        //[InverseProperty(nameof(Comments))]
         public virtual Echo? CommParent { get; set; }
-
         public virtual Echo? AmpParent { get; set; }
 
         public virtual ICollection<Echo>? Comments { get; set; }
