@@ -38,11 +38,13 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - Mesaj gresit cand intri pe o postare a cuiva blocat
         //          DONE - Mark as deleted admin sterge si comentariile si le atribuie la deleted user
         //          DONE - Block ul chiar daca e unidirectional afecteaza ambele directii
-        // ADD AI FUNCTIONALITY
+        // De reparat detalii la index() echoes - cu selectarea initiala a echoes
+        //          DONE - ADD AI FUNCTIONALITY
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
-        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, ### LoginPartial modificat - DONE ###,
+        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, 
         //                                     SCOS / MODIFICAT HOME CONTROLLER, poate sa ne mai uitam peste taburile din sidebar,
-        //                                     vedem ce facem cu paginile de Identity, formul de new/edit echo sa arate bine + add a new comment button
+        //                                     vedem ce facem cu paginile de Identity, formul de new/edit echo sa arate bine
+        //                                     !!!! restrictionarea marimii AmplifyWindow si a unei postari in caz de text infinit !!!!
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -899,6 +901,5 @@ namespace BAtwitter_DAW_2526.Controllers
             ViewBag.Title = "Flock Join Requests";
             return View(flock);
         }
-
     }
 }

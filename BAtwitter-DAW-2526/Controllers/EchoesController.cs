@@ -1,11 +1,12 @@
 ﻿using BAtwitter_DAW_2526.Data;
 using BAtwitter_DAW_2526.Models;
+using BAtwitter_DAW_2526.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+//using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BAtwitter_DAW_2526.Controllers
 {
@@ -14,15 +15,18 @@ namespace BAtwitter_DAW_2526.Controllers
         private readonly ApplicationDbContext db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ILanguageAnalysisService _languageService;
         private readonly IWebHostEnvironment _env;
 
-        public EchoesController(ApplicationDbContext context, UserManager<ApplicationUser> usrm, RoleManager<IdentityRole> rlm, IWebHostEnvironment env)
+        public EchoesController(ApplicationDbContext context, UserManager<ApplicationUser> usrm, RoleManager<IdentityRole> rlm, IWebHostEnvironment env, ILanguageAnalysisService languageService)
         {
             db = context;
             _roleManager = rlm;
             _userManager = usrm;
             _env = env;
+            _languageService = languageService;
         }
+
         // [HttpGet] care se executa implicit
         public IActionResult Index()
         {
@@ -36,7 +40,6 @@ namespace BAtwitter_DAW_2526.Controllers
             if (currentUserId == null)
             {
                 var echoes = db.Echoes
-                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null && ech.User!.AccountStatus.Equals("active"))
                                 .Include(ech => ech.User)
                                     .ThenInclude(u => u!.ApplicationUser)
                                 .Include(ech => ech.AmpParent)
@@ -46,6 +49,7 @@ namespace BAtwitter_DAW_2526.Controllers
                                     .ThenInclude(i => i.User)
                                         .ThenInclude(u => u!.ApplicationUser)
                                 .Include(ech => ech.Flock)
+                                .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null && ech.User!.AccountStatus.Equals("active"))
                                 .OrderByDescending(ech => ech.DateCreated)
                                 .ToList();
 
@@ -80,7 +84,9 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Echo-uri normale (nu sunt comentarii) - exclude blocked users (except admin)
                 var normalEchoes = db.Echoes
                                     .Where(ech => !ech.IsRemoved && ech.UserId != deletedUserId && ech.CommParentId == null
-                                            && (ech.UserId == currentUserId || activeUserIds.Contains(ech.UserId)) && followedUserIds.Contains(ech.UserId))
+                                            && (ech.UserId == currentUserId || followedUserIds.Contains(ech.UserId)))
+                                    // daca este stricat ceva, elimina paranteza de la activeUserIds, am pus-o ca sa apara si postarile tale
+                                    // (activeUserIds.Contains(ech.UserId)) && - am eliminat asta
                                     .Include(ech => ech.User)
                                         .ThenInclude(u => u!.SentRelations)
                                     .Include(ech => ech.User)
@@ -424,6 +430,12 @@ namespace BAtwitter_DAW_2526.Controllers
                 ViewBag.Flocks = new SelectList(flocks, "Id", "Name");
             }
 
+            if (TempData.ContainsKey("message"))
+            {
+                ViewBag.Message = TempData["message"];
+                ViewBag.Type = TempData["type"];
+            }
+
             ViewBag.Title = "New Echo";
             SetAccessRights();
             return View(echo);
@@ -450,10 +462,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (parentEcho != null)
                 {
-                    // Check if users are blocked (bidirectional)
-                    var isBlocked = db.Relations
-                        .Any(r => (r.SenderId == currentUserId && r.ReceiverId == parentEcho.UserId && r.Type == -1) ||
-                                  (r.SenderId == parentEcho.UserId && r.ReceiverId == currentUserId && r.Type == -1));
+                    var isBlocked = db.Relations.Any(r => r.SenderId == parentEcho.UserId && r.ReceiverId == currentUserId && r.Type == -1);
 
                     if (isBlocked)
                     {
@@ -475,6 +484,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att1.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "New Echo";
                     ModelState.AddModelError("Att1", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     SetAccessRights();
                     return View(echo);
@@ -487,6 +497,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att2.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "New Echo";
                     ModelState.AddModelError("Att2", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     SetAccessRights();
                     return View(echo);
@@ -494,21 +505,55 @@ namespace BAtwitter_DAW_2526.Controllers
             }
 
             // Explicitly ensure Id is 0 for new entities to avoid identity column errors
-            echo.Id = 0;
+            echo.Id = 0; LanguageResult languageResult = new();
 
             if (TryValidateModel(echo))
             {
+                if (echo.Content == null && att1 == null && att2 == null)
+                {
+                    ViewBag.Title = "New Echo";
+                    ModelState.AddModelError("Content", "Echoes must contain at least an attachment or some text content.");
+                    SetAccessRights();
+                    return View(echo);
+                }
+
+                if (echo.Content != null)
+                {
+                    languageResult = await _languageService.AnalyzeLanguageAsync(echo.Content);
+
+                    if (languageResult.Success)
+                    {
+                        if ((languageResult.Label.Equals("true") && languageResult.Confidence >= 0.6) ||
+                            (languageResult.Label.Equals("uncertain") && languageResult.Confidence >= 0.6) ||
+                            (languageResult.Label.Equals("false") && languageResult.Confidence <= 0.1))
+                        {
+                            ViewBag.Title = "New Echo";
+                            ModelState.AddModelError("Content", "This Echo contains inappropriate language. Please change the content of your Echo.");
+                            SetAccessRights();
+                            return View(echo);
+                        }
+                    }
+                    else
+                    {
+                        ViewBag.Title = "New Echo";
+                        ModelState.AddModelError("Content", "An error occured. Please try again.");
+                        SetAccessRights();
+                        return View(echo);
+                    }
+                }
+                
+
                 db.Echoes.Add(echo);
                 await db.SaveChangesAsync();
 
                 // Now save files using the echo ID
                 if (att1 != null && att1.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att1.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -520,11 +565,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (att2 != null && att2.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, att2.FileName);
-                    var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                    var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -570,13 +615,14 @@ namespace BAtwitter_DAW_2526.Controllers
                 }
                 else
                 {
-                    TempData["message"] = "Echo was sent succesfully!";
+                    TempData["message"] = $"Echo was sent succesfully!";
                     TempData["type"] = "alert-success";
                     return RedirectToAction("Index");
                 }
                     
             }
 
+            ViewBag.Title = "New Echo";
             SetAccessRights();
             return View(echo);
         }
@@ -617,7 +663,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
-        public IActionResult Edit(int id, Echo reqEcho, IFormFile? att1, IFormFile? att2, bool RemoveAtt1 = false, bool RemoveAtt2 = false)
+        public async Task<IActionResult> Edit(int id, Echo reqEcho, IFormFile? att1, IFormFile? att2, bool RemoveAtt1 = false, bool RemoveAtt2 = false)
         {
             Echo? echo = db.Echoes.Find(id);
 
@@ -635,7 +681,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (echo.UserId != _userManager.GetUserId(User) ||  !User.IsInRole("Admin"))
+            if (echo.UserId != _userManager.GetUserId(User))
             {
                 TempData["message"] = "You are not authorized to modify this echo.";
                 TempData["type"] = "alert-warning";
@@ -663,6 +709,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att1.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Modify Echo";
                     ModelState.AddModelError("Att1", "File #1 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     SetAccessRights();
                     return View(echo);
@@ -675,6 +722,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(att2.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Modify Echo";
                     ModelState.AddModelError("Att2", "File #2 must be an image (jpg, jpeg, png, webp, gif) or a video (mp4, mov).");
                     SetAccessRights();
                     return View(echo);
@@ -684,11 +732,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att1 != null && att1.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att1.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att1.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att1.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -701,11 +749,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (att2 != null && att2.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Images", echo.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Images", echo.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, att2.FileName);
-                var databaseFileName = "/Resources/Alex/Images/" + echo.Id + "/" + att2.FileName;
+                var databaseFileName = "/Resources/Ioan/Images/" + echo.Id + "/" + att2.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -717,6 +765,39 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (TryValidateModel(echo))
             {
+                if (echo.Content == null && echo.Att1 == null && echo.Att2 == null)
+                {
+                    ViewBag.Title = "Modify Echo";
+                    ModelState.AddModelError("Content", "Echoes must contain at least an attachment or some text content.");
+                    SetAccessRights();
+                    return View(echo);
+                }
+
+                if (echo.Content != null)
+                {
+                    var languageResult = await _languageService.AnalyzeLanguageAsync(echo.Content);
+
+                    if (languageResult.Success)
+                    {
+                        if ((languageResult.Label.Equals("true") && languageResult.Confidence >= 0.6) ||
+                            (languageResult.Label.Equals("uncertain") && languageResult.Confidence >= 0.6) ||
+                            (languageResult.Label.Equals("false") && languageResult.Confidence <= 0.1))
+                        {
+                            ViewBag.Title = "Modify Echo";
+                            ModelState.AddModelError("Content", "This Echo contains inappropriate language. Please change the content of your Echo.");
+                            SetAccessRights();
+                            return View(echo);
+                        }
+                    }
+                    else
+                    {
+                        ViewBag.Title = "Modify Echo";
+                        ModelState.AddModelError("Content", "An error occured. Please try again.");
+                        SetAccessRights();
+                        return View(echo);
+                    }
+                }
+
                 echo.DateEdited = DateTime.Now;
                 db.SaveChanges();
 
@@ -726,6 +807,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                ViewBag.Title = "Modify Echo";
                 SetAccessRights();
                 return View(echo);
             }

@@ -144,6 +144,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "New Flock";
                     ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp).");
                     SetAccessRights();
                     return View(flock);
@@ -157,6 +158,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "New Flock";
                     ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp).");
                     SetAccessRights();
                     return View(flock);
@@ -181,11 +183,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -197,11 +199,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (banner != null && banner.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, banner.FileName);
-                    var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -223,6 +225,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 return RedirectToAction("Index");
             }
 
+            ViewBag.Title = "New Flock";
             SetAccessRights();
             return View(flock);
         }
@@ -317,6 +320,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Edit Flock";
                     ModelState.AddModelError("PfpLink", "Flock profile picture must be an image (jpg, jpeg, png, webp, gif).");
                     SetAccessRights();
                     return View(flock);
@@ -329,6 +333,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Edit Flock";
                     ModelState.AddModelError("Banner", "Banner must be an image (jpg, jpeg, png, webp, gif)");
                     SetAccessRights();
                     return View(flock);
@@ -338,11 +343,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -355,11 +360,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Alex/Flocks/" + flock.Id + "/" + banner.FileName;
+                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -379,6 +384,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                ViewBag.Title = "Edit Flock";
                 SetAccessRights();
                 return View(flock);
             }

@@ -324,6 +324,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(pfp.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Edit Profile";
                     ModelState.AddModelError("PfpLink", "Profile picture must be an image (jpg, jpeg, png, webp).");
                     SetAccessRights();
                     return View(userProfile);
@@ -336,6 +337,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 var fileExtension = Path.GetExtension(banner.FileName).ToLower();
                 if (!extensions.Contains(fileExtension))
                 {
+                    ViewBag.Title = "Edit Profile";
                     ModelState.AddModelError("BannerLink", "Banner must be an image (jpg, jpeg, png, webp)");
                     SetAccessRights();
                     return View(userProfile);
@@ -350,12 +352,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.PfpLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(pfp.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -373,12 +375,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.BannerLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(banner.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Alex/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -402,6 +404,7 @@ namespace BAtwitter_DAW_2526.Controllers
             }
             else
             {
+                ViewBag.Title = "Edit Profile";
                 SetAccessRights();
                 return View(userProfile);
             }
@@ -849,7 +852,7 @@ namespace BAtwitter_DAW_2526.Controllers
                         DeletePhysicalFile(userProfile.BannerLink);
                     }
 
-                    var userDirectory = Path.Combine(_env.WebRootPath, "Resources", "Alex", "Users", userProfile.Id);
+                    var userDirectory = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
                     if (Directory.Exists(userDirectory))
                     {
                         try
