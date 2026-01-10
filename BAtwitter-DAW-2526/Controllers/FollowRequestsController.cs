@@ -35,6 +35,9 @@ namespace BAtwitter_DAW_2526.Controllers
         //          DONE - Block Users
         //          DONE CRED??? Make regular user delete not assign posts to deleted user, only admin delete (?????????????)
         //          IN PROGRESS- Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCH BAR NU FUNCTIONEAZA)
+        // Mesaj gresit cand intri pe o postare a cuiva blocat
+        // Mark as deleted admin sterge si comentariile si le atribuie la deleted user
+        // Block ul chiar daca e unidirectional afecteaza ambele directii
         // ADD AI FUNCTIONALITY
         // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
         // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, ### LoginPartial modificat - DONE ###,
