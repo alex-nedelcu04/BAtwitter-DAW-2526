@@ -583,10 +583,17 @@ namespace BAtwitter_DAW_2526.Controllers
                             .Include(ech => ech.AmpParent)
                                     .ThenInclude(ech => ech!.User)
                                         .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+                                    .ThenInclude(u => u!.SentRelations)
+                            .Include(ech => ech.AmpParent)
+                                .ThenInclude(ech => ech!.User)
+        .ThenInclude(u => u!.ReceivedRelations)
                             .Include(ech => ech.Interactions!)
                                 .ThenInclude(i => i.User)
                                         .ThenInclude(u => u!.ApplicationUser)
-                            .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
+                            .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) 
+                            // Filtreaza postarile sterse
                             .AsEnumerable()
                             .Where(ech => CanViewEcho(ech))
                             .OrderByDescending(ech => ech.DateCreated);
