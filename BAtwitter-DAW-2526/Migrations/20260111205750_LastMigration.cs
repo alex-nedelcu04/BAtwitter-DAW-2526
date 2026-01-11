@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BAtwitter_DAW_2526.Migrations
 {
     /// <inheritdoc />
-    public partial class HopefullyLast : Migration
+    public partial class LastMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BAtwitter_DAW_2526.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260111185318_HopefullyLast")]
-    partial class HopefullyLast
+    [Migration("20260111205750_LastMigration")]
+    partial class LastMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
