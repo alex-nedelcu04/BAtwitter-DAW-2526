@@ -159,7 +159,7 @@ namespace BAtwitter_DAW_2526
                             Id = "8e445865-a24d-4543-a6c6-9443d048cdb0", // admin (deleted)
                             DisplayName = "Admin",
                             JoinDate = DateTime.Now,
-                            AccountStatus = "deleted"
+                            AccountStatus = "active"
                         },
                         new UserProfile
                         {

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BAtwitter_DAW_2526.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260111205750_LastMigration")]
+    [Migration("20260111211318_LastMigration")]
     partial class LastMigration
     {
         /// <inheritdoc />
