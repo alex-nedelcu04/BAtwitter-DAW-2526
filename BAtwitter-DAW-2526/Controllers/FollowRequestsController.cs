@@ -776,7 +776,7 @@ namespace BAtwitter_DAW_2526.Controllers
             {
                 TempData["followrequest-message"] = "This user is not blocked.";
                 TempData["followrequest-type"] = "alert-info";
-                return RedirectToAction("BlockedUsers");
+                return RedirectToAction("Show", "UserProfiles", new { username = userToUnblock.ApplicationUser?.UserName });
             }
 
             db.Relations.Remove(blockRelation);
@@ -784,7 +784,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
             TempData["followrequest-message"] = "User has been unblocked successfully.";
             TempData["followrequest-type"] = "alert-success";
-            return RedirectToAction("BlockedUsers");
+            return RedirectToAction("Show", "UserProfiles", new { username = userToUnblock.ApplicationUser?.UserName });
         }
 
         [Authorize(Roles = "User, Admin")]

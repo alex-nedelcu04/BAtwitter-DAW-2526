@@ -352,12 +352,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.PfpLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Users", userProfile.Id);
                 Directory.CreateDirectory(directoryPath);
 
                 var safeName = Path.GetFileName(pfp.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -375,12 +375,12 @@ namespace BAtwitter_DAW_2526.Controllers
                     DeletePhysicalFile(userProfile.BannerLink);
                 }
 
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
-                Directory.CreateDirectory(directoryPath);
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Users", userProfile.Id);
+                Directory.CreateDirectory(directoryPath);   
 
                 var safeName = Path.GetFileName(banner.FileName);
                 var storagePath = Path.Combine(directoryPath, safeName);
-                var databaseFileName = "/Resources/Ioan/Users/" + userProfile.Id + "/" + safeName;
+                var databaseFileName = "/Resources/Users/" + userProfile.Id + "/" + safeName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -461,7 +461,7 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 // Atribuie toate echo-urile utilizatorului la utilizatorul deleted
                 var userEchoes = db.Echoes
-                    .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
+                    .Where(e => e.UserId == id && e.CommParentId == null)
                     .ToList();
 
                 foreach (var echo in userEchoes)
@@ -476,6 +476,9 @@ namespace BAtwitter_DAW_2526.Controllers
                 {
                     flock.AdminId = admin.Id;
                 }
+
+                var flockMemberships = db.FlockUsers.Where(fu => fu.UserId == id).ToList();
+                db.FlockUsers.RemoveRange(flockMemberships);
 
                 try
                 {
@@ -575,6 +578,8 @@ namespace BAtwitter_DAW_2526.Controllers
             var echoes = db.Echoes
                             .Include(ech => ech.User)
                                 .ThenInclude(u => u!.ApplicationUser)
+                            .Include(ech => ech.User!.ReceivedRelations)
+                            .Include(ech => ech.User!.SentRelations)
                             .Include(ech => ech.AmpParent)
                                     .ThenInclude(ech => ech!.User)
                                         .ThenInclude(u => u!.ApplicationUser)
@@ -582,6 +587,8 @@ namespace BAtwitter_DAW_2526.Controllers
                                 .ThenInclude(i => i.User)
                                         .ThenInclude(u => u!.ApplicationUser)
                             .Where(e => e.UserId == userProfile.Id && e.UserId != deletedUserId && e.CommParentId == null && !e.IsRemoved) // Filtreaza postarile sterse
+                            .AsEnumerable()
+                            .Where(ech => CanViewEcho(ech))
                             .OrderByDescending(ech => ech.DateCreated);
 
             // Count follows and followers excluding blocked users (except admin)
@@ -638,7 +645,7 @@ namespace BAtwitter_DAW_2526.Controllers
                     ViewBag.IsBlockedBy = false;
                     ViewBag.HasBlocked = false;
                     ViewBag.HasPendingRequest = false;
-                    ViewBag.IsPrivateAccount = false;
+                    ViewBag.IsPrivateAccount = userProfile.AccountStatus == "private";
                 }
             }
 
@@ -679,92 +686,6 @@ namespace BAtwitter_DAW_2526.Controllers
             return View();
         }
 
-        /*
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public IActionResult MarkAsDeletedAdmin(string id)
-        {
-            if (User.IsInRole("Admin"))
-            {
-                UserProfile? userProfile = db.UserProfiles
-                    .Include(up => up.ApplicationUser)
-                    .Where(up => up.Id == id)
-                    .FirstOrDefault();
-
-                if (userProfile is null)
-                {
-                    TempData["userprofile-message"] = "User profile does not exist!";
-                    TempData["userprofile-type"] = "alert-warning";
-                    return RedirectToAction("IndexAdmin");
-                }
-
-                var deletedUser = db.Users
-                    .Where(u => u.UserName == "deleted")
-                    .FirstOrDefault();
-
-                if (deletedUser == null)
-                {
-                    TempData["userprofile-message"] = "Deleted user not found!";
-                    TempData["userprofile-type"] = "alert-danger";
-                    return RedirectToAction("IndexAdmin");
-                }
-
-                // Marchează contul ca șters
-                userProfile.AccountStatus = "deleted";
-
-                // Atribuie toate echo-urile utilizatorului la utilizatorul deleted
-                var userEchoes = db.Echoes
-                    .Where(e => e.UserId == id && e.UserId != deletedUser.Id && e.CommParentId == null)
-                    .ToList();
-
-                foreach (var echo in userEchoes)
-                {
-                    AssignEchoAndChildrenToDeletedUser(echo, deletedUser.Id, userProfile.Id, false);
-                }
-                
-                var userFlocks = db.Flocks.Where(f => f.AdminId == id).ToList();
-                var admins = _userManager.GetUsersInRoleAsync("Admin").Result;
-                var admin = admins[0];
-                foreach (var flock in userFlocks)
-                {
-                    flock.AdminId = admin.Id;
-                }
-
-                var username = userProfile.ApplicationUser?.UserName;
-                var referer = Request.Headers["Referer"].ToString();
-                var isFromShow = referer.Contains("UserProfiles/Show");
-
-                try
-                {
-                    db.SaveChanges();
-                    TempData["userprofile-message"] = "User profile was marked as deleted!";
-                    TempData["userprofile-type"] = "alert-info";
-                    
-                    if (isFromShow && !string.IsNullOrEmpty(username))
-                    {
-                        return RedirectToAction("Show", new { username = username });
-                    }
-                    return RedirectToAction("IndexAdmin");
-                }
-                catch (DbUpdateException)
-                {
-                    TempData["userprofile-message"] = "User profile could not be marked as deleted...";
-                    TempData["userprofile-type"] = "alert-danger";
-                    
-                    if (isFromShow && !string.IsNullOrEmpty(username))
-                    {
-                        return RedirectToAction("Show", new { username = username });
-                    }
-                    return RedirectToAction("IndexAdmin");
-                }
-            }
-            else
-            {
-                TempData["userprofile-message"] = "You do not have the necessary permissions to mark this user profile as deleted.";
-                TempData["userprofile-type"] = "alert-warning";
-                return RedirectToAction("IndexAdmin");
-            }
-        }*/
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
@@ -819,7 +740,6 @@ namespace BAtwitter_DAW_2526.Controllers
                     foreach (var flock in adminFlocks)
                     {
                         flock.AdminId = siteAdmin;
-                    
                     }
 
                     var userEchoes = db.Echoes
@@ -852,7 +772,7 @@ namespace BAtwitter_DAW_2526.Controllers
                         DeletePhysicalFile(userProfile.BannerLink);
                     }
 
-                    var userDirectory = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Users", userProfile.Id);
+                    var userDirectory = Path.Combine(_env.WebRootPath, "Resources", "Users", userProfile.Id);
                     if (Directory.Exists(userDirectory))
                     {
                         try
@@ -954,6 +874,45 @@ namespace BAtwitter_DAW_2526.Controllers
                 .Any(r => r.SenderId == currentUserId && r.ReceiverId == user.Id && r.Type == -1);
 
             return (user.AccountStatus.Equals("private") && user.Id != currentUserId && !isFollowing) || isBlockedBy || hasBlocked;
+        }
+
+        private bool CanViewEcho(Echo echo)
+        {
+            // Admin can view all echoes
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+            
+            // If echo user has blocked current user, don't show
+            if (!string.IsNullOrEmpty(currentUserId) && 
+                echo.User!.SentRelations.Any(rel => rel.ReceiverId == currentUserId && rel.Type == -1))
+            {
+                return false;
+            }
+
+            // If account is active (public), can view
+            if (echo.User!.AccountStatus.Equals("active"))
+            {
+                return true;
+            }
+
+            // If viewing own echo, can view
+            if (echo.UserId == currentUserId)
+            {
+                return true;
+            }
+
+            // If account is private, can only view if following
+            if (echo.User!.AccountStatus.Equals("private"))
+            {
+                return !string.IsNullOrEmpty(currentUserId) && 
+                       echo.User!.ReceivedRelations.Any(rel => rel.SenderId == currentUserId && rel.Type == 1);
+            }
+
+            return false;
         }
     }
 }

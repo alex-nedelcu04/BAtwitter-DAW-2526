@@ -183,11 +183,11 @@ namespace BAtwitter_DAW_2526.Controllers
                 // Now save files using the echo ID
                 if (pfp != null && pfp.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
+                    var databaseFileName = "/Resources/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -199,11 +199,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
                 if (banner != null && banner.Length > 0)
                 {
-                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                    var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Flocks", flock.Id.ToString());
                     Directory.CreateDirectory(directoryPath); // Create directory if it doesn't exist
 
                     var storagePath = Path.Combine(directoryPath, banner.FileName);
-                    var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
+                    var databaseFileName = "/Resources/Flocks/" + flock.Id + "/" + banner.FileName;
 
                     using (var fileStream = new FileStream(storagePath, FileMode.Create))
                     {
@@ -293,9 +293,23 @@ namespace BAtwitter_DAW_2526.Controllers
             flock.Name = reqFlock.Name;
             flock.Description = reqFlock.Description;
             
-            // Update admin if changed
             if (!string.IsNullOrEmpty(reqFlock.AdminId) && reqFlock.AdminId != flock.AdminId)
             {
+                var isAlreadyMember = db.FlockUsers
+                    .Any(fu => fu.FlockId == id && fu.UserId == reqFlock.AdminId);
+
+                if (!isAlreadyMember)
+                {
+                    var newAdminFlockUser = new FlockUser
+                    {
+                        FlockId = id,
+                        UserId = reqFlock.AdminId,
+                        Role = "member",
+                        JoinDate = DateTime.Now
+                    };
+                    db.FlockUsers.Add(newAdminFlockUser);
+                }
+
                 flock.AdminId = reqFlock.AdminId;
             }
 
@@ -343,11 +357,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (pfp != null && pfp.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, pfp.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + pfp.FileName;
+                var databaseFileName = "/Resources/Flocks/" + flock.Id + "/" + pfp.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -360,11 +374,11 @@ namespace BAtwitter_DAW_2526.Controllers
 
             if (banner != null && banner.Length > 0)
             {
-                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Ioan", "Flocks", flock.Id.ToString());
+                var directoryPath = Path.Combine(_env.WebRootPath, "Resources", "Flocks", flock.Id.ToString());
                 Directory.CreateDirectory(directoryPath);
 
                 var storagePath = Path.Combine(directoryPath, banner.FileName);
-                var databaseFileName = "/Resources/Ioan/Flocks/" + flock.Id + "/" + banner.FileName;
+                var databaseFileName = "/Resources/Flocks/" + flock.Id + "/" + banner.FileName;
 
                 using (var fileStream = new FileStream(storagePath, FileMode.Create))
                 {
@@ -821,6 +835,60 @@ namespace BAtwitter_DAW_2526.Controllers
             ViewBag.Title = "Flock Members";
             SetAccessRights();
             return View(flock);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "User, Admin")]
+        public IActionResult RemoveMember(int id, string userId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                TempData["flock-message"] = "You must be logged in to remove members.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Members", new { id });
+            }
+
+            var flock = db.Flocks.Find(id);
+
+            if (flock is null)
+            {
+                TempData["flock-message"] = "Flock does not exist!";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Index");
+            }
+
+            if (flock.AdminId != currentUserId)
+            {
+                TempData["flock-message"] = "You are not authorized to remove members from this flock.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Members", new { id });
+            }
+
+            if (flock.AdminId == userId)
+            {
+                TempData["flock-message"] = "You cannot remove the flock admin.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Members", new { id });
+            }
+
+            var flockUser = db.FlockUsers
+                .FirstOrDefault(fu => fu.FlockId == id && fu.UserId == userId);
+
+            if (flockUser is null)
+            {
+                TempData["flock-message"] = "Member not found.";
+                TempData["flock-type"] = "alert-warning";
+                return RedirectToAction("Members", new { id });
+            }
+
+            db.FlockUsers.Remove(flockUser);
+            db.SaveChanges();
+
+            TempData["flock-message"] = "Member removed successfully!";
+            TempData["flock-type"] = "alert-success";
+            return RedirectToAction("Members", new { id });
         }
 
 

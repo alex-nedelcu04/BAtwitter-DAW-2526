@@ -83,6 +83,32 @@
                                         <small class="text-muted">Joined: @member.JoinDate.ToString("MMM d, yyyy")</small>
                                     </div>
                                 </div>
+                                @if (ViewBag.CurrentUser != null && ViewBag.CurrentUser.ToString() == Model.AdminId)
+                                {
+                                    <form method="post" action="@Url.Action("RemoveMember", "Flocks", new { id = Model.Id, userId = member.UserId })">
+                                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#removeModal_@member.UserId">
+                                            Remove
+                                        </button>
+
+                                        <div class="modal fade" id="removeModal_@member.UserId" tabindex="-1" aria-labelledby="removeModalLabel_@member.UserId" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="removeModalLabel_@member.UserId">Remove Member</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Are you sure you want to remove @@@(member.User.ApplicationUser?.UserName) from this flock?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Remove</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                }
                             </div>
                         </div>
                     </div>

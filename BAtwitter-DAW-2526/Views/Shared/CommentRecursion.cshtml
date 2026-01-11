@@ -44,11 +44,20 @@
         return false;
     }
     
+    bool IsBlocked(Echo echo)
+    {
+        if (ViewBag.CurrentUser == null || echo.User == null)
+            return false;
+        return echo.User.SentRelations.Any(rel => rel.ReceiverId == ViewBag.CurrentUser && rel.Type == -1);
+    }
+    
     bool CanViewEcho(Echo echo)
     {
+        if (IsBlocked(echo))
+            return false;
+            
         return echo.User!.AccountStatus.Equals("active") // User.IsInRole("Admin") || - probably not correct
-           || ((echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1))
-           && (!echo.User!.SentRelations.Any(rel => rel.ReceiverId == ViewBag.CurrentUser && rel.Type == -1)))
+           || ((echo.User!.AccountStatus.Equals("private") && echo.User!.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1)))
            || echo.UserId == ViewBag.CurrentUser;
     }
 }
@@ -58,6 +67,12 @@
     {
         <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
             This Echo has been removed.
+        </small>
+    }
+    else if (IsBlocked(Model) && !User.IsInRole("Admin"))
+    {
+        <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+            This Echo was sent from an account that has blocked you.
         </small>
     }
     else if (!CanViewEcho(Model) && !User.IsInRole("Admin"))
@@ -319,6 +334,12 @@
                     {
                         <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
                             This Echo has been removed.
+                        </small>
+                    }
+                    else if (IsBlocked(Model))
+                    {
+                        <small class="d-flex flex-row mt-3 p-3 rounded-3 text-center justify-content-center alert alert-secondary text-muted fst-italic">
+                            This Echo was sent from an account that has blocked you.
                         </small>
                     }
                     else if (!CanViewEcho(Model))

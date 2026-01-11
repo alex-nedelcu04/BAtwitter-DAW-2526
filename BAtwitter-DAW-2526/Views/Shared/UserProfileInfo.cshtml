@@ -56,11 +56,11 @@
 
                 <div class="ms-3 mt-5">
                     <h4 class="fw-bold mb-0 d-flex align-items-center gap-1">
-                        @(Model.DisplayName)
+                        <span style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;" title="@Model.DisplayName">@(Model.DisplayName)</span>
                         @if (showLock) { <i class="bi bi-lock-fill fs-5"></i> }
                         <small class="h6 text-muted mb-0">@Model.Pronouns </small>
                     </h4>
-                    <h5 class="text-muted mb-0"> @@@Model.ApplicationUser?.UserName</h5>
+                    <h5 class="text-muted mb-0" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@("@" + Model.ApplicationUser?.UserName)">@@@Model.ApplicationUser?.UserName</h5>
                 </div>
 
                 @if (isShow)

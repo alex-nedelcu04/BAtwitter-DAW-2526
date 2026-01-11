@@ -112,8 +112,9 @@ namespace BAtwitter_DAW_2526.Controllers
                                         .Include(up => up.SentRelations)
                                         .Include(up => up.ReceivedRelations)
                                         .ToList()
-                                        .Where(up => CanViewPrivs(up) && !up.AccountStatus.Equals("deleted") && 
-                                                  ((up.ApplicationUser!.UserName!.Contains(search, StringComparison.OrdinalIgnoreCase)) || (up.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase))))
+                                        .Where(up => !up.AccountStatus.Equals("deleted") &&
+                                                  ((up.ApplicationUser!.UserName!.Contains(search, StringComparison.OrdinalIgnoreCase)) || (up.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase))) &&
+                                                  !up.SentRelations.Any(rel => rel.ReceiverId == currentUserId && rel.Type == -1))
                                         .OrderByDescending(up => up.JoinDate);
                     ViewBag.Users = userProfiles;
                 }
@@ -122,8 +123,9 @@ namespace BAtwitter_DAW_2526.Controllers
                     var userProfiles = db.UserProfiles
                                         .Include(up => up.ApplicationUser)
                                         .ToList()
-                                        .Where(up => up.AccountStatus.Equals("active") && 
-                                                  ((up.ApplicationUser!.UserName!.Contains(search, StringComparison.OrdinalIgnoreCase)) || (up.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase))))
+                                        .Where(up => !up.AccountStatus.Equals("deleted") && 
+                                                  ((up.ApplicationUser!.UserName!.Contains(search, StringComparison.OrdinalIgnoreCase)) || (up.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase))) &&
+                                                  !up.SentRelations.Any(rel => rel.ReceiverId == currentUserId && rel.Type == -1))
                                         .OrderByDescending(up => up.JoinDate);
                     ViewBag.Users = userProfiles;
                 }
@@ -470,9 +472,24 @@ namespace BAtwitter_DAW_2526.Controllers
 
         private bool CanViewPrivs(UserProfile usr)
         {
-            return User.IsInRole("Admin") || _userManager.GetUserId(User) == usr.ApplicationUser!.Id
-                || ((usr.AccountStatus.Equals("private") && usr.ReceivedRelations.Any(rel => rel.SenderId == ViewBag.CurrentUser && rel.Type == 1))
-                && (!usr.SentRelations.Any(rel => rel.ReceiverId == ViewBag.CurrentUser && rel.Type == -1)));
+            var currentUserId = _userManager.GetUserId(User);
+            
+            if (User.IsInRole("Admin"))
+                return true;
+            
+            if (currentUserId == usr.ApplicationUser!.Id)
+                return true;
+            
+            bool isBlocked = usr.SentRelations.Any(rel => rel.ReceiverId == currentUserId && rel.Type == -1);
+            
+            if (isBlocked)
+                return false;
+            
+            if (usr.AccountStatus.Equals("active"))
+                return true;
+            
+            
+            return false;
         }
 
         private void SetAccessRights()

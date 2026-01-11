@@ -114,3 +114,24 @@ body {
     .sidebar-links .nav-link .bi {
         color: currentColor;
     }
+
+
+/* reduce the space between the profile link and arrow */
+.profile-link {
+    padding-right: .25rem !important; /* was px-2 (~.5rem). make it tighter */
+}
+
+/* pull arrow a bit left */
+.profile-dropup-arrow {
+    margin-left: -0.25rem; /* move left; tweak to -0.5rem if needed */
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+    .profile-dropup-arrow:focus,
+    .profile-dropup-arrow:focus-visible,
+    .profile-dropup-arrow:active {
+        outline: none !important;
+        box-shadow: none !important;
+    }
