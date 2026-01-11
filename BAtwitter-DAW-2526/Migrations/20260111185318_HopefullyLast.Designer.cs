@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BAtwitter_DAW_2526.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260105212253_FollowRequestAdd")]
-    partial class FollowRequestAdd
+    [Migration("20260111185318_HopefullyLast")]
+    partial class HopefullyLast
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -142,8 +142,8 @@ namespace BAtwitter_DAW_2526.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
@@ -209,7 +209,8 @@ namespace BAtwitter_DAW_2526.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("PfpLink")
                         .IsRequired()
@@ -324,8 +325,11 @@ namespace BAtwitter_DAW_2526.Migrations
                     b.Property<string>("ReceiverId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("relationDate")
+                    b.Property<DateTime>("RelationDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.HasKey("SenderId", "ReceiverId");
 
@@ -348,12 +352,13 @@ namespace BAtwitter_DAW_2526.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("JoinDate")
                         .HasColumnType("datetime2");

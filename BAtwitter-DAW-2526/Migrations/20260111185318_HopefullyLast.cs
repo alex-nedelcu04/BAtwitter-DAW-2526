@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BAtwitter_DAW_2526.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDB : Migration
+    public partial class HopefullyLast : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -161,8 +161,8 @@ namespace BAtwitter_DAW_2526.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    DisplayName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     PfpLink = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BannerLink = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     JoinDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -187,7 +187,7 @@ namespace BAtwitter_DAW_2526.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AdminId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
                     PfpLink = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BannerLink = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -211,7 +211,8 @@ namespace BAtwitter_DAW_2526.Migrations
                 {
                     SenderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ReceiverId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    relationDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    RelationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,7 +239,7 @@ namespace BAtwitter_DAW_2526.Migrations
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CommParentId = table.Column<int>(type: "int", nullable: true),
                     AmpParentId = table.Column<int>(type: "int", nullable: true),
-                    Content = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    Content = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Att1 = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Att2 = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LikesCount = table.Column<int>(type: "int", nullable: false),
@@ -302,6 +303,37 @@ namespace BAtwitter_DAW_2526.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FollowRequests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SenderUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ReceiverUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ReceiverFlockId = table.Column<int>(type: "int", nullable: true),
+                    RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FollowRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FollowRequests_Flocks_ReceiverFlockId",
+                        column: x => x.ReceiverFlockId,
+                        principalTable: "Flocks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FollowRequests_UserProfiles_ReceiverUserId",
+                        column: x => x.ReceiverUserId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FollowRequests_UserProfiles_SenderUserId",
+                        column: x => x.SenderUserId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bookmarks",
                 columns: table => new
                 {
@@ -334,6 +366,7 @@ namespace BAtwitter_DAW_2526.Migrations
                     Liked = table.Column<bool>(type: "bit", nullable: false),
                     Bookmarked = table.Column<bool>(type: "bit", nullable: false),
                     Rebounded = table.Column<bool>(type: "bit", nullable: false),
+                    LikedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ReboundedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     BookmarkedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -435,6 +468,30 @@ namespace BAtwitter_DAW_2526.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_ReceiverFlockId",
+                table: "FollowRequests",
+                column: "ReceiverFlockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_ReceiverUserId",
+                table: "FollowRequests",
+                column: "ReceiverUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_SenderUserId_ReceiverFlockId",
+                table: "FollowRequests",
+                columns: new[] { "SenderUserId", "ReceiverFlockId" },
+                unique: true,
+                filter: "[ReceiverFlockId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_SenderUserId_ReceiverUserId",
+                table: "FollowRequests",
+                columns: new[] { "SenderUserId", "ReceiverUserId" },
+                unique: true,
+                filter: "[ReceiverFlockId] IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Interactions_EchoId",
                 table: "Interactions",
                 column: "EchoId");
@@ -468,6 +525,9 @@ namespace BAtwitter_DAW_2526.Migrations
 
             migrationBuilder.DropTable(
                 name: "FlockUsers");
+
+            migrationBuilder.DropTable(
+                name: "FollowRequests");
 
             migrationBuilder.DropTable(
                 name: "Interactions");
