@@ -18,36 +18,6 @@ namespace BAtwitter_DAW_2526.Controllers
             _userManager = usrm;
         }
 
-        // TO DO !!!!!!
-        //          DONE - UNFOLLOW (similar cu FollowDirect pretty much, doar ca nu creezi relatia, o stergi)
-        //          DONE - Kind reminder pt mine: Retweet si quote nu se poate la postarile unui cont privat la care nu ai follow
-        //          DONE - O sa trebuiasca si un view pt followeri si following
-        //          DONE - De sters alertele de la inceputul paginii, sa ramana doar acolo jos
-        //          DONE - Am uitat sa fac schimbarea aia cu numele paginii sa fei scris langa search
-        //          DONE - inca se vad postarile unui user privat in profilul lui
-        //          DONE - adminul paginii nu are buton de follow, apar tot alea de mark as deleted si delete permanently
-        //          DONE - Delete Flock Admin => Adminul site-ului devine adminul flockului
-        //          DONE - ADD SEARCH METHOD
-        //          DONE - Make profiles with wrong relations not able to view followers / follows as well
-        //          DONE - Add click event to follows/followers display name / username
-        //          DONE - No login into "deleted" accounts
-        //          DONE - When UnfollowUser, if from Followers / Following redirect to own page instead
-        //          DONE - Block Users
-        //          DONE - Make regular user delete not assign posts to deleted user, only admin delete
-        //          DONE - Edit Flock => Adminul poate asigna alt admin prin introducerea usernameului (SEARCHBAR FUNCTIONEAZA)
-        //          DONE - Mesaj gresit cand intri pe o postare a cuiva blocat
-        //          DONE - Mark as deleted admin sterge si comentariile si le atribuie la deleted user
-        //          DONE - Block ul chiar daca e unidirectional afecteaza ambele directii
-        //          DONE - De reparat detalii la index() echoes - cu selectarea initiala a echoes (maybe check later idk)
-        //          DONE - ADD AI FUNCTIONALITY
-        // SEED DATA FINAL SI RESETAREA FISIERELOR DI BD-URILOR PT CLEAN TESTING
-        
-        // Alte chestii de frontend, cum ar fi butoane de rebound / amplify mai subtile daca e cont privat, 
-        //                                     SCOS / MODIFICAT HOME CONTROLLER, poate sa ne mai uitam peste taburile din sidebar,
-        //                                     vedem ce facem cu paginile de Identity, formul de new/edit echo sa arate bine
-        //                                     !!!! restrictionarea marimii AmplifyWindow si a unei postari in caz de text infinit !!!!
-        //                                     CommentRecursion, EchoInfo pentru Show si maybe EchoParent / AmplifyWindow ar trb sa afiseze mesaj daca
-        //                                      este Echo de la o persoana pe care o ai la blocked, asa cum are si adminul
 
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
@@ -270,9 +240,6 @@ namespace BAtwitter_DAW_2526.Controllers
             return RedirectToAction("Show", "UserProfiles", new { username = (type != null) ? senderUser!.UserName : receiverUser.ApplicationUser?.UserName });
         }
 
-        /// <summary>
-        /// Accept a follow request (for user-to-user follows)
-        /// </summary>
         [HttpPost]
         [Authorize(Roles = "User, Admin")]
         public IActionResult AcceptFollowRequest(string senderUserId)

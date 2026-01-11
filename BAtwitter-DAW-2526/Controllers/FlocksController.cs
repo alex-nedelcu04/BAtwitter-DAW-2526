@@ -24,15 +24,6 @@ namespace BAtwitter_DAW_2526.Controllers
             _env = env;
         }
 
-        // nu am modificat modelul Flock si sa fac migratie ca mi-e frica sa nu stric ceva :)))
-        // dar ar trb pus un string pt Banner (daca il pui tu denumeste-l Banner ca sa nu schimbi numele aici)
-        // daca e ar merge si un dateEdited? dar n-am avea unde sa-l afisam so nu prea are sens
-        // si mna si UserProfile are nevoie de Banner
-        // VEZI CAND BAGI BANNER SA DECOMENTEZI CHESTIILE LEGATE DE BANNER DE AICI CA DAU EROARE RN SI D-AIA LE-AM COMENTAT
-
-        // Index ar trb sa fie lista tuturor flockurilor din aplicatie
-        // ca un feed: cea mai noua postare + banner pt flockul respectiv deasupra postarii in stilul viewului de profil ca un fel de advertisment
-
 
         public IActionResult Index()
         {
@@ -114,7 +105,7 @@ namespace BAtwitter_DAW_2526.Controllers
             return View();
         }
 
-        // New ar fi similar cu cel de la echo, numai ca poti pune banner si pfp in loc de 2 atasamente, deci trb modificata logica...
+       
         [Authorize(Roles = "User, Admin")]
         public IActionResult New()
         {
@@ -124,11 +115,6 @@ namespace BAtwitter_DAW_2526.Controllers
             return View(fl);
         }
 
-        // POST pt New, basically copiat de la Echo backend wise si cred ca nu e nevoie de altceva mai mult ca paginile vor fi very similar
-        // singura diferenta ar fi ca nu avem doua inputuri si atribute random, chiar conteaza care-i care si nu ar trb sa fie interschimbabile
-        // am putea pune la nivel de frontend si un preview pt profil, ca sa vada userul cum ar arata profilul lor daca l-ar edita.
-        // si daca e, putem face ceva similar si pt Echo sau comment, like un div de preview pt creearea postarii ca si cum am scrie divul ala live
-        // gen yk cum teitter iti ofera un fel de preview cand scrii un tweet, cv de genul sa fie si pagina aia, dar mna asta e frontend
 
         [Authorize(Roles = "User, Admin")]
         [HttpPost]
@@ -727,9 +713,7 @@ namespace BAtwitter_DAW_2526.Controllers
         }
 
 
-
-        // Show va fi ca o vizualizare a profilului unui user designwise
-        // sooo ecourile afisate ar trebui sa fie date cu link catre EchoesController for obvious reasons
+ 
         public IActionResult Show(int id)
         {
             var flock = db.Flocks
@@ -915,25 +899,7 @@ namespace BAtwitter_DAW_2526.Controllers
                 System.IO.File.Delete(physicalPath);
             }
         }
-           /*
 
-        // Atribuie echo și comentarii recursiv la utilizatorul deleted
-        private void AssignEchoAndChildrenToDeletedUser(Echo echo, string deletedUserId)
-        {
-            echo.UserId = deletedUserId;
-            echo.IsRemoved = true;
-            echo.FlockId = null; // elimina FK-ul catre flock
-
-            var comments = db.Echoes
-                            .Where(ech => ech.CommParentId == echo.Id && ech.UserId != deletedUserId)
-                            .ToList();
-
-            foreach (var comment in comments)
-            {
-                AssignEchoAndChildrenToDeletedUser(comment, deletedUserId);
-            }
-        }
-        */
 
         private bool CanViewProfile(UserProfile user)
         {
